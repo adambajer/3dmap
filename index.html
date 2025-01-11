@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Interactive 3D Map - jsDelivr CDN</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            display: none;
+            max-width: 250px;
+            font-size: 14px;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="tooltip"></div>
+    <!-- Main Script with Module Type -->
+    <script type="module">
+        // Import Three.js and Its Extensions via jsDelivr CDN
+        import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js';
+        import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js';
+        import { SVGLoader } from 'https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/SVGLoader.js';
+
+        // SVG Data as a String
+        const svgData = `
+        <svg width="100%" height="" viewBox="0 0 90.827335 118.4355" version="1.1" id="svg5"
+            xmlns="http://www.w3.org/2000/svg">
+            <g id="g3" transform="matrix(2.1476804,0,0,2.1584459,-50.795127,-314.30528)" inkscape:label="mapka">
+                <g id="objekty" inkscape:label="objekty" transform="translate(1.7013486e-7,1.0498795)">
+                    <!-- budovaa -->
+                    <path style="fill:#87ce87;fill-opacity:1;"
+                        d="m 17.641954,43.71498 -0.26748,-3.626707 4.04565,-13.26432 12.33758,4.029667 -4.11253,13.129999 -3.4145,-1.121373 0.17129,3.639913 z"
+                        id="budovaa" class="hover-effect" data-src="./druhepatro.png"
+                        data-description="Plocha: 159 m<sup>2</sup><br>
+                        Kapacita apartmánu A je 11 osob s možností 7 přistýlek.<br><br> Klikněte na obrázek vpravo pro otevření interaktivní mapy apartmánu A ➙"
+                        data-title="Apartmán A" sodipodi:nodetypes="cccccccc" inkscape:label="budovaa"
+                        transform="matrix(0.46561863,0,0,0.46329631,23.651157,144.21474)" />
+                    <!-- budovab -->
+                    <path style="fill:#ebcf5aff;fill-opacity:1;"
+                        d="m 17.641954,43.71498 8.76001,2.787179 1.57145,20.752765 -8.45909,0.604452 z" id="budovab"
+                        class="hover-effect"
+                        data-src="https://selsky-dvur.info/wp-content/uploads/2022/11/ubytovani-Olomouc.jpeg"
+                        data-description="Plocha: 74 m<sup>2</sup> <br>Kapacita apartmánu B je 6 osob s možností 2 přistýlek."
+                        data-title="Apartmán B" sodipodi:nodetypes="ccccc" inkscape:label="budovab"
+                        transform="matrix(0.46561863,0,0,0.46329631,23.651157,144.21474)" />
+                </g>
+            </g>
+        </svg>
+        `;
+
+        // Initialize Three.js Scene
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xe0e0e0);
+
+        // Set up Camera
+        const camera = new THREE.PerspectiveCamera(
+            45,
+            window.innerWidth / window.innerHeight,
+            1,
+            1000
+        );
+        camera.position.set(0, 100, 200);
+
+        // Set up Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Add Orbit Controls
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        // Add Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(100, 100, 100);
+        scene.add(dirLight);
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize Tooltip
+        const tooltip = document.getElementById('tooltip');
+
+        // Raycaster and Mouse Vector for Interactivity
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let INTERSECTED = null;
+        let mouseX = 0, mouseY = 0;
+
+        // Mouse Move Handler
+        function onMouseMove(event) {
+            // Update mouse coordinates
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+        }
+
+        // Click Handler
+        function onClick(event) {
+            if (INTERSECTED) {
+                const data = INTERSECTED.object.userData;
+                if (data && data.href) {
+                    window.open(data.href, '_blank');
+                } else if (data && data.src) {
+                    // Optionally, handle image display or other actions
+                    window.open(data.src, '_blank');
+                }
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove, false);
+        window.addEventListener('click', onClick, false);
+
+        // Load and Parse SVG
+        const loader = new SVGLoader();
+        const svgParsed = loader.parse(svgData);
+
+        const paths = svgParsed.paths;
+
+        // Iterate through SVG Paths
+        paths.forEach((path) => {
+            const id = path.userData.node.id;
+            // Check if the path is 'budovaa' or 'budovab'
+            if (id === 'budovaa' || id === 'budovab') {
+                // Extract color from SVG
+                const color = path.color ? path.color : new THREE.Color(0x87ce87);
+                const material = new THREE.MeshPhongMaterial({
+                    color: color,
+                    side: THREE.DoubleSide,
+                    depthWrite: true,
+                });
+
+                // Convert SVG path to shapes
+                const shapes = path.toShapes(true);
+
+                shapes.forEach((shape) => {
+                    // Extrude Settings
+                    const extrudeSettings = {
+                        depth: 10, // Extrusion depth
+                        bevelEnabled: false,
+                    };
+
+                    // Create Geometry
+                    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+
+                    // Create Mesh
+                    const mesh = new THREE.Mesh(geometry, material);
+
+                    // Center the geometry
+                    geometry.computeBoundingBox();
+                    const bbox = geometry.boundingBox;
+                    const centerX = (bbox.max.x + bbox.min.x) / 2;
+                    const centerY = (bbox.max.y + bbox.min.y) / 2;
+                    mesh.position.x = -centerX;
+                    mesh.position.y = -centerY;
+
+                    // Extract Data Attributes
+                    const dataTitle = path.userData.node.getAttribute('data-title') || 'No Title';
+                    const dataDescription = path.userData.node.getAttribute('data-description') || 'No Description';
+                    const dataHref = path.userData.node.getAttribute('data-href') || null;
+                    const dataSrc = path.userData.node.getAttribute('data-src') || null;
+
+                    // Attach Data to Mesh
+                    mesh.userData = {
+                        title: dataTitle,
+                        description: dataDescription,
+                        href: dataHref,
+                        src: dataSrc,
+                    };
+
+                    // Add Mesh to Scene
+                    scene.add(mesh);
+                });
+            }
+        });
+
+        // Animation Loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Update Raycaster
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(scene.children, true);
+
+            if (intersects.length > 0) {
+                const firstIntersect = intersects[0].object;
+                if (INTERSECTED !== firstIntersect) {
+                    INTERSECTED = firstIntersect;
+                    const data = INTERSECTED.userData;
+                    if (data) {
+                        tooltip.style.display = 'block';
+                        tooltip.innerHTML = `<strong>${data.title}</strong><br>${data.description}`;
+                    } else {
+                        tooltip.style.display = 'none';
+                    }
+                }
+            } else {
+                INTERSECTED = null;
+                tooltip.style.display = 'none';
+            }
+
+            // Position Tooltip
+            if (INTERSECTED) {
+                tooltip.style.left = (mouseX + 10) + 'px';
+                tooltip.style.top = (mouseY + 10) + 'px';
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

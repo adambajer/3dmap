@@ -348,18 +348,15 @@ class ModelLoader {
         });
     }
 
-    animate() {
-        requestAnimationFrame(() => this.animate());
+function animate() {
+  requestAnimationFrame(animate);
 
-        if (this.isFirstPerson) {
-            const moveVector = this.firstPersonVelocity.clone().applyMatrix4(
-                new THREE.Matrix4().makeRotationY(this.camera.rotation.y)
-            );
-            this.camera.position.add(moveVector);
-        } else {
-            this.controls.update();
-        }
+  // Required for damping (if enabled)
+  controls.update();
 
-        this.renderer.render(this.scene, this.camera);
-    }
+  // Render the scene
+  renderer.render(scene, camera);
+}
+
+animate();
 }

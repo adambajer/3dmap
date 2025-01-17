@@ -170,9 +170,9 @@
         <input type="file" id="mtlInput" accept=".mtl">
         
         <!-- Control buttons -->
-        <button id="first-person-btn" class="overlay-control">👣</button>
-        <button id="mobile-look-btn" class="overlay-control">📱</button>
-        <button id="fullscreen-btn" class="overlay-control">⛶</button>
+        <button id="first-person-btn" class="overlay-control">đź‘Ł</button>
+        <button id="mobile-look-btn" class="overlay-control">đź“±</button>
+        <button id="fullscreen-btn" class="overlay-control">â›¶</button>
         
         <!-- Information displays -->
         <div id="part-info"></div>
@@ -183,9 +183,9 @@
         <!-- File selection controls -->
         <div class="file-controls">
             <div class="file-input-row">
-                <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
-                <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
-                <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
+                <button id="obj-select-btn" class="overlay-control file-select-btn">đź—‚ď¸Ź</button>
+                <button id="mtl-select-btn" class="overlay-control file-select-btn">đź—„ď¸Ź</button>
+                <button id="load-model-btn" class="overlay-control" disabled>đźš€</button>
             </div>
         </div>
 
@@ -193,6 +193,28 @@
         <div id="virtual-joystick"></div>
     </div>
     
+    <script>
+        // Add camera behavior for first-person mode
+        document.getElementById('first-person-btn').addEventListener('click', () => {
+            const isFirstPerson = modelLoader.isFirstPerson = !modelLoader.isFirstPerson;
+
+            if (isFirstPerson) {
+                modelLoader.controls.enabled = false; // Disable orbit controls for first-person
+                document.getElementById('mode-info').textContent = 'First Person Mode: ON';
+
+                // Set camera to first-person view
+                modelLoader.camera.rotation.set(Math.PI / 2, 0, 0); // Perpendicular to floor
+                modelLoader.camera.position.set(0, 1.6, 5); // Adjust height and distance
+            } else {
+                modelLoader.controls.enabled = true; // Enable orbit controls
+                document.getElementById('mode-info').textContent = 'First Person Mode: OFF';
+
+                // Reset camera to default top view
+                modelLoader.camera.rotation.set(0, 0, 0); // Reset to top-down view
+                modelLoader.camera.position.set(0, 10, 0); // Move camera to top view position
+            }
+        });
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

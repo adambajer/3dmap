@@ -285,9 +285,10 @@ class ModelLoader {
 
                         // Scale so that the largest dimension is ~5 units
                         const maxDim = Math.max(size.x, size.y, size.z);
-                        const scaleFactor = 5 / maxDim;
-                        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
-console.log("maxDim:", maxDim, " -> scaleFactor:", scaleFactor);
+                const sceneWidth = 10; // Adjust this based on your scene dimensions
+const scaleFactor = sceneWidth / maxDim; 
+
+object.scale.set(scaleFactor, scaleFactor, scaleFactor); 
 
                         // Center the object at (0,0,0)
                         object.position.sub(center);

@@ -63,8 +63,7 @@ class ModelLoader {
 
         // Device orientation controls variables
         this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
-        this.isMobileLookEnabled = false;
-
+ 
         // Virtual joystick
         this.joystick = null;
 

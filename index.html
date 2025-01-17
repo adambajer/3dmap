@@ -1,16 +1,19 @@
-
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>3D Model Interactive Viewer</title>
+    <!-- Three.js and related loaders -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- NippleJS for virtual joystick -->
     <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.8.0/dist/nipplejs.min.js"></script>
 
     <style>
+        /* Your existing CSS styles */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -65,7 +68,7 @@
         }
         .file-controls {
             position:fixed;
-             bottom: 20px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             width: auto;
@@ -96,6 +99,7 @@
         .file-select-btn.active {
             opacity: 1;
             background-color: rgba(100,200,100,0.7);
+            border: 2px solid #64c864;
         }
         .file-type-label {
             position: absolute;
@@ -171,8 +175,10 @@
         <input type="file" id="mtlInput" accept=".mtl">
         
         <!-- Control buttons -->
-<button id="first-person-btn">First Person Mode</button>
-<div id="virtual-joystick"></div>
+        <button id="first-person-btn" class="overlay-control">First Person Mode</button>
+        <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
+        <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
+        <button id="load-model-btn" class="overlay-control" disabled>🚀 Load Model</button>
         <button id="mobile-look-btn" class="overlay-control">📱</button>
         <button id="fullscreen-btn" class="overlay-control">⛶</button>
         
@@ -182,17 +188,11 @@
         <div id="file-type-info"></div>
         <div id="error-message"></div>
         
-        <!-- File selection controls -->
-        <div class="file-controls">
-            <div class="file-input-row">
-                <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
-                <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
-                <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
-            </div>
-        </div>
- 
+        <!-- Virtual Joystick -->
+        <div id="virtual-joystick"></div>
     </div>
     
+    <!-- Include your JavaScript file at the end of the body -->
     <script src="app.js"></script>
 </body>
 </html>

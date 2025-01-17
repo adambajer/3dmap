@@ -1,4 +1,3 @@
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -76,63 +75,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 50px;
-        }
-        #load-model-btn {
-            background-color: rgba(100,200,100,0.7);
-            padding: 0 15px;
-            font-size: 14px;
-        }
-        #load-model-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .file-select-btn {
-            position: relative;
-            width: 50px;
-            opacity: 0.7;
-        }
-        .file-select-btn.active {
-            opacity: 1;
-            background-color: rgba(100,200,100,0.7);
-        }
-        .file-type-label {
-            position: absolute;
-            bottom: -20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 10px;
-            color: #333;
-            white-space: nowrap;
-        }
-        #part-info, #mode-info, #file-type-info, #error-message {
-            position: absolute;
-            background-color: rgba(255,255,255,0.8);
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            max-width: 200px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            z-index: 10;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        #part-info { 
-            bottom: 120px; 
-            left: 10px; 
-        }
-        #mode-info { 
-            bottom: 120px; 
-            right: 10px; 
-        }
-        #file-type-info { 
-            bottom: 160px; 
-            left: 10px; 
-        }
-        #error-message { 
-            bottom: 160px; 
-            right: 10px; 
-            color: red; 
+            gap: 20px;
         }
         #virtual-joystick {
             position: fixed;
@@ -141,80 +84,74 @@
             width: 100px;
             height: 100px;
             z-index: 20;
-            opacity: 0.7;
+            opacity: 0.9;
         }
-        #objInput, #mtlInput {
-            display: none;
+        #virtual-joystick.hidden {
+            display: none; /* Hide joystick when needed */
         }
         @media (max-width: 600px) {
-            .overlay-control {
-                min-width: 35px;
-                height: 35px;
-                font-size: 14px;
-            }
-            .file-controls {
-                flex-direction: column;
-                gap: 10px;
-            }
             #virtual-joystick {
                 width: 80px;
                 height: 80px;
+                bottom: 10px;
+                right: 10px;
             }
         }
     </style>
 </head>
 <body>
     <div id="render-container">
-        <!-- Hidden inputs for file selection -->
-        <input type="file" id="objInput" accept=".obj">
-        <input type="file" id="mtlInput" accept=".mtl">
+        <input type="file" id="objInput" accept=".obj" style="display:none;">
+        <input type="file" id="mtlInput" accept=".mtl" style="display:none;">
         
-        <!-- Control buttons -->
-        <button id="first-person-btn" class="overlay-control">đź‘Ł</button>
-        <button id="mobile-look-btn" class="overlay-control">đź“±</button>
-        <button id="fullscreen-btn" class="overlay-control">â›¶</button>
+        <button id="first-person-btn" class="overlay-control">👣</button>
+        <button id="mobile-look-btn" class="overlay-control">📱</button>
+        <button id="fullscreen-btn" class="overlay-control">⛶</button>
         
-        <!-- Information displays -->
-        <div id="part-info"></div>
-        <div id="mode-info"></div>
-        <div id="file-type-info"></div>
-        <div id="error-message"></div>
-        
-        <!-- File selection controls -->
-        <div class="file-controls">
-            <div class="file-input-row">
-                <button id="obj-select-btn" class="overlay-control file-select-btn">đź—‚ď¸Ź</button>
-                <button id="mtl-select-btn" class="overlay-control file-select-btn">đź—„ď¸Ź</button>
-                <button id="load-model-btn" class="overlay-control" disabled>đźš€</button>
-            </div>
-        </div>
-
-        <!-- Virtual joystick -->
         <div id="virtual-joystick"></div>
     </div>
     
     <script>
-        // Add camera behavior for first-person mode
-        document.getElementById('first-person-btn').addEventListener('click', () => {
-            const isFirstPerson = modelLoader.isFirstPerson = !modelLoader.isFirstPerson;
+        let joystickManager;
 
-            if (isFirstPerson) {
-                modelLoader.controls.enabled = false; // Disable orbit controls for first-person
-                document.getElementById('mode-info').textContent = 'First Person Mode: ON';
+        // Joystick Initialization
+        function initializeJoystick() {
+            const joystickContainer = document.getElementById('virtual-joystick');
+            if (joystickManager) joystickManager.destroy(); // Cleanup any existing joystick
+            joystickManager = nipplejs.create({
+                zone: joystickContainer,
+                mode: 'static',
+                position: { left: '50%', top: '50%' },
+                color: 'blue',
+                size: 100,
+            });
 
-                // Set camera to first-person view
-                modelLoader.camera.rotation.set(Math.PI / 2, 0, 0); // Perpendicular to floor
-                modelLoader.camera.position.set(0, 1.6, 5); // Adjust height and distance
+            joystickManager.on('move', (event, data) => {
+                if (data && data.direction) {
+                    const { x, y } = data.vector; // Only use x and y axis
+                    console.log(`Moving on X: ${x}, Y: ${y}`);
+                    // Use x and y to move your object; Z-axis movement should be ignored
+                }
+            });
+
+            joystickManager.on('end', () => {
+                console.log('Joystick released');
+            });
+        }
+
+        // Toggle Mobile Look Mode
+        document.getElementById('mobile-look-btn').addEventListener('click', () => {
+            const joystick = document.getElementById('virtual-joystick');
+            if (joystick.classList.contains('hidden')) {
+                joystick.classList.remove('hidden'); // Show joystick
+                initializeJoystick();
             } else {
-                modelLoader.controls.enabled = true; // Enable orbit controls
-                document.getElementById('mode-info').textContent = 'First Person Mode: OFF';
-
-                // Reset camera to default top view
-                modelLoader.camera.rotation.set(0, 0, 0); // Reset to top-down view
-                modelLoader.camera.position.set(0, 10, 0); // Move camera to top view position
+                joystick.classList.add('hidden'); // Hide joystick
             }
         });
+
+        // Initialize joystick on load
+        initializeJoystick();
     </script>
-    <script src="app.js"></script>
 </body>
 </html>

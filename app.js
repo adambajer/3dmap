@@ -138,39 +138,72 @@ class ModelLoader {
         });
     }
 
-    setupFileInputs() {
-        const objInput = document.getElementById("objInput");
-        const mtlInput = document.getElementById("mtlInput");
-        const loadModelBtn = document.getElementById("load-model-btn");
+   setupFileInputs() {
+    const objInput = document.getElementById("objInput");
+    const mtlInput = document.getElementById("mtlInput");
+    const loadModelBtn = document.getElementById("load-model-btn");
+    const objSelectBtn = document.getElementById("obj-select-btn");
+    const mtlSelectBtn = document.getElementById("mtl-select-btn");
 
-        objInput.addEventListener("change", (event) => {
-            const file = event.target.files[0];
-            if (file && file.name.toLowerCase().endsWith(".obj")) {
-                this.selectedFiles.obj = file;
-                console.log(`OBJ file selected: ${file.name}`);
-            } else {
-                alert("Please select a valid .obj file");
-            }
-        });
+    // Trigger hidden file input when select button is clicked
+    objSelectBtn.addEventListener("click", () => {
+        objInput.click();
+    });
 
-        mtlInput.addEventListener("change", (event) => {
-            const file = event.target.files[0];
-            if (file && file.name.toLowerCase().endsWith(".mtl")) {
-                this.selectedFiles.mtl = file;
-                console.log(`MTL file selected: ${file.name}`);
-            } else {
-                alert("Please select a valid .mtl file");
-            }
-        });
+    mtlSelectBtn.addEventListener("click", () => {
+        mtlInput.click();
+    });
 
-        loadModelBtn.addEventListener("click", () => {
-            if (this.selectedFiles.obj && this.selectedFiles.mtl) {
-                this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
-            } else {
-                alert("Please select both OBJ and MTL files.");
-            }
-        });
+    objInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file && file.name.toLowerCase().endsWith(".obj")) {
+            this.selectedFiles.obj = file;
+            console.log(`OBJ file selected: ${file.name}`);
+            objSelectBtn.classList.add("active");
+        } else {
+            alert("Please select a valid .obj file");
+            objSelectBtn.classList.remove("active");
+            this.selectedFiles.obj = null;
+        }
+        this.checkFilesSelected(loadModelBtn);
+    });
+
+    mtlInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file && file.name.toLowerCase().endsWith(".mtl")) {
+            this.selectedFiles.mtl = file;
+            console.log(`MTL file selected: ${file.name}`);
+            mtlSelectBtn.classList.add("active");
+        } else {
+            alert("Please select a valid .mtl file");
+            mtlSelectBtn.classList.remove("active");
+            this.selectedFiles.mtl = null;
+        }
+        this.checkFilesSelected(loadModelBtn);
+    });
+
+    loadModelBtn.addEventListener("click", () => {
+        if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+            this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
+            loadModelBtn.disabled = true; // Optionally disable after loading
+            objSelectBtn.classList.remove("active");
+            mtlSelectBtn.classList.remove("active");
+            this.selectedFiles = { obj: null, mtl: null };
+        } else {
+            alert("Please select both OBJ and MTL files.");
+        }
+    });
+}
+
+// Helper method to check if both files are selected
+checkFilesSelected(loadModelBtn) {
+    if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+        loadModelBtn.disabled = false;
+    } else {
+        loadModelBtn.disabled = true;
     }
+}
+
 
     loadModel(objFile, mtlFile) {
         if (this.currentModel) {

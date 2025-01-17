@@ -30,6 +30,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // File Inputs and Buttons
     const objInput = document.getElementById("objInput");
     const mtlInput = document.getElementById("mtlInput");
+    const objSelectBtn = document.getElementById("obj-select-btn");
+    const mtlSelectBtn = document.getElementById("mtl-select-btn");
     const loadModelBtn = document.getElementById("load-model-btn");
     const errorMessage = document.getElementById("error-message");
 
@@ -38,37 +40,47 @@ document.addEventListener("DOMContentLoaded", () => {
     // File selection handlers
     let selectedFiles = { obj: null, mtl: null };
 
+    // Open file dialogs for OBJ and MTL
+    objSelectBtn.addEventListener("click", () => objInput.click());
+    mtlSelectBtn.addEventListener("click", () => mtlInput.click());
+
+    // Handle OBJ file selection
     objInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file && file.name.toLowerCase().endsWith(".obj")) {
             selectedFiles.obj = file;
             console.log(`OBJ file selected: ${file.name}`);
+            objSelectBtn.classList.add("active");
             updateLoadButtonState();
         } else {
             alert("Please select a valid .obj file.");
         }
     });
 
+    // Handle MTL file selection
     mtlInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file && file.name.toLowerCase().endsWith(".mtl")) {
             selectedFiles.mtl = file;
             console.log(`MTL file selected: ${file.name}`);
+            mtlSelectBtn.classList.add("active");
             updateLoadButtonState();
         } else {
             alert("Please select a valid .mtl file.");
         }
     });
 
+    // Enable "Load Model" button only if both files are selected
+    function updateLoadButtonState() {
+        loadModelBtn.disabled = !(selectedFiles.obj && selectedFiles.mtl);
+    }
+
+    // Handle "Load Model" button click
     loadModelBtn.addEventListener("click", () => {
         if (selectedFiles.obj && selectedFiles.mtl) {
             loadModel(selectedFiles.obj, selectedFiles.mtl);
         }
     });
-
-    function updateLoadButtonState() {
-        loadModelBtn.disabled = !(selectedFiles.obj && selectedFiles.mtl);
-    }
 
     // Load model
     function loadModel(objFile, mtlFile) {
@@ -93,19 +105,19 @@ document.addEventListener("DOMContentLoaded", () => {
                     (object) => {
                         console.log("OBJ loaded successfully:", object);
 
-                        // Center and scale model
+                        // Center and scale the model
                         const box = new THREE.Box3().setFromObject(object);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
                         object.position.sub(center); // Center the model at (0, 0, 0)
-                        const scaleFactor = 10 / Math.max(size.x, size.y, size.z); // Adjust scaling to fit
+                        const scaleFactor = 10 / Math.max(size.x, size.y, size.z); // Scale to fit
                         object.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
                         scene.add(object);
                         currentModel = object;
 
                         console.log("Model added to scene.");
-                        // Position the camera
+                        // Adjust camera
                         camera.position.set(0, size.y * 2, size.z * 2 + 10);
                         camera.lookAt(0, 0, 0);
                         controls.update();

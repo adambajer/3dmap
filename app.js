@@ -1,124 +1,174 @@
-// Initialize scene, camera, and renderer
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-const renderer = new THREE.WebGLRenderer();
+class ModelLoader {
+    constructor(renderContainer) {
+        this.scene = new THREE.Scene();
+        this.scene.background = new THREE.Color(0xe0e0e0);
 
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+        this.camera = new THREE.PerspectiveCamera(
+            50,
+            renderContainer.clientWidth / renderContainer.clientHeight,
+            0.1,
+            1000
+        );
+        this.camera.position.z = 10;
 
-// Add grid and axes
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
+        this.renderer = new THREE.WebGLRenderer({ antialias: true });
+        this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
+        renderContainer.appendChild(this.renderer.domElement);
 
-const gridHelper = new THREE.GridHelper(100, 100);
-scene.add(gridHelper);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene.add(ambientLight);
 
-// Set camera position
-camera.position.set(0, 10, 20);
-camera.lookAt(0, 0, 0);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        this.scene.add(directionalLight);
 
-// Handle rotating and zooming
-const rotateXControl = document.getElementById('rotateX');
-const rotateYControl = document.getElementById('rotateY');
-const zoomControl = document.getElementById('zoom');
+        this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
+        this.controls.enableDamping = true;
+        this.controls.dampingFactor = 0.25;
 
-rotateXControl.addEventListener('input', () => {
-  const angle = THREE.MathUtils.degToRad(rotateXControl.value);
-  camera.rotation.x = angle;
-});
+        this.currentModel = null;
+        this.selectedFiles = { obj: null, mtl: null };
 
-rotateYControl.addEventListener('input', () => {
-  const angle = THREE.MathUtils.degToRad(rotateYControl.value);
-  camera.rotation.y = angle;
-});
+        this.setupInteractions(renderContainer);
+        this.animate();
+    }
 
-zoomControl.addEventListener('input', () => {
-  camera.zoom = parseFloat(zoomControl.value) / 10;
-  camera.updateProjectionMatrix();
-});
+    setupInteractions(renderContainer) {
+        const objInput = document.getElementById("objInput");
+        const mtlInput = document.getElementById("mtlInput");
+        const objSelectBtn = document.getElementById("obj-select-btn");
+        const mtlSelectBtn = document.getElementById("mtl-select-btn");
+        const loadModelBtn = document.getElementById("load-model-btn");
+        const fileTypeInfo = document.getElementById("file-type-info");
+        const errorMessage = document.getElementById("error-message");
 
-// Walking controls
-const movementSpeed = 0.1;
-let velocity = new THREE.Vector3();
+        objSelectBtn.addEventListener("click", () => {
+            objInput.click();
+        });
 
-document.addEventListener('keydown', (event) => {
-  switch (event.code) {
-    case 'ArrowUp':
-    case 'KeyW':
-      velocity.z = -movementSpeed;
-      break;
-    case 'ArrowDown':
-    case 'KeyS':
-      velocity.z = movementSpeed;
-      break;
-    case 'ArrowLeft':
-    case 'KeyA':
-      velocity.x = -movementSpeed;
-      break;
-    case 'ArrowRight':
-    case 'KeyD':
-      velocity.x = movementSpeed;
-      break;
-  }
-});
+        objInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".obj")) {
+                this.selectedFiles.obj = file;
+                objSelectBtn.classList.add("active");
+                fileTypeInfo.textContent = `OBJ File: ${file.name}`;
+                loadModelBtn.disabled = !(this.selectedFiles.obj && this.selectedFiles.mtl);
+                errorMessage.textContent = "";
+            } else {
+                errorMessage.textContent = "Please select a valid .obj file";
+            }
+        });
 
-document.addEventListener('keyup', () => {
-  velocity.set(0, 0, 0);
-});
+        mtlSelectBtn.addEventListener("click", () => {
+            mtlInput.click();
+        });
 
-// File Picker
-const mtlInput = document.getElementById('mtlFile');
-const objInput = document.getElementById('objFile');
-const loadButton = document.getElementById('loadButton');
+        mtlInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".mtl")) {
+                this.selectedFiles.mtl = file;
+                mtlSelectBtn.classList.add("active");
+                fileTypeInfo.textContent = `MTL File: ${file.name}`;
+                loadModelBtn.disabled = !(this.selectedFiles.obj && this.selectedFiles.mtl);
+                errorMessage.textContent = "";
+            } else {
+                errorMessage.textContent = "Please select a valid .mtl file";
+            }
+        });
 
-// File loading logic
-loadButton.addEventListener('click', () => {
-  if (!mtlInput.files[0] || !objInput.files[0]) {
-    alert('Please select both MTL and OBJ files.');
-    return;
-  }
+        loadModelBtn.addEventListener("click", () => {
+            if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+                this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
+                loadModelBtn.classList.add("active");
+            } else {
+                errorMessage.textContent = "Please select both OBJ and MTL files";
+            }
+        });
+    }
 
-  const mtlFile = URL.createObjectURL(mtlInput.files[0]);
-  const objFile = URL.createObjectURL(objInput.files[0]);
+    loadModel(objFile, mtlFile) {
+        document.getElementById("error-message").textContent = "";
 
-  const mtlLoader = new THREE.MTLLoader();
-  const objLoader = new THREE.OBJLoader();
+        if (this.currentModel) {
+            this.scene.remove(this.currentModel);
+        }
 
-  mtlLoader.load(mtlFile, (materials) => {
-    materials.preload();
-    objLoader.setMaterials(materials);
+        const mtlLoader = new THREE.MTLLoader();
+        const objLoader = new THREE.OBJLoader();
 
-    objLoader.load(
-      objFile,
-      (object) => {
-        object.position.set(0, 0, 0); // Initial position
-        object.scale.set(1, 1, 1);   // Adjust scale if needed
-        scene.add(object);
-      },
-      (xhr) => {
-        console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
-      },
-      (error) => {
-        console.error('An error occurred:', error);
-      }
-    );
-  });
-});
+        mtlLoader.load(
+            URL.createObjectURL(mtlFile),
+            (materials) => {
+                materials.preload();
+                objLoader.setMaterials(materials);
 
-// Animation loop
-function animate() {
-  requestAnimationFrame(animate);
+                objLoader.load(
+                    URL.createObjectURL(objFile),
+                    (object) => {
+                        this.currentModel = object;
 
-  // Update camera movement
-  const direction = new THREE.Vector3();
-  camera.getWorldDirection(direction);
-  direction.y = 0; // Lock movement to the XZ plane
-  direction.normalize();
+                        const box = new THREE.Box3().setFromObject(object);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
 
-  camera.position.addScaledVector(direction, velocity.z);
-  camera.position.x += velocity.x;
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scaleFactor = 5 / maxDim;
+                        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-  renderer.render(scene, camera);
+                        object.position.sub(center);
+                        this.scene.add(object);
+
+                        this.fitCameraToObject(object);
+                    },
+                    undefined,
+                    (error) => {
+                        console.error("Error loading OBJ:", error);
+                        document.getElementById("error-message").textContent =
+                            "Error loading OBJ file";
+                    }
+                );
+            },
+            undefined,
+            (error) => {
+                console.error("Error loading MTL:", error);
+                document.getElementById("error-message").textContent =
+                    "Error loading MTL file";
+            }
+        );
+    }
+
+    fitCameraToObject(object) {
+        const box = new THREE.Box3().setFromObject(object);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = this.camera.fov * (Math.PI / 180);
+        const cameraDistance = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 2;
+
+        this.camera.position.copy(center);
+        this.camera.position.z += cameraDistance;
+        this.controls.target.copy(center);
+        this.controls.update();
+    }
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        this.controls.update();
+        this.renderer.render(this.scene, this.camera);
+    }
 }
 
-animate();
+document.addEventListener("DOMContentLoaded", () => {
+    const renderContainer = document.getElementById("render-container");
+    new ModelLoader(renderContainer);
+
+    window.addEventListener("resize", () => {
+        const width = renderContainer.clientWidth;
+        const height = renderContainer.clientHeight;
+
+        modelLoader.camera.aspect = width / height;
+        modelLoader.camera.updateProjectionMatrix();
+        modelLoader.renderer.setSize(width, height);
+    });
+});

@@ -15,63 +15,49 @@ document.addEventListener("DOMContentLoaded", () => {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderContainer.appendChild(renderer.domElement);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1);
     scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(10, 10, 10);
     scene.add(directionalLight);
 
-    // Axes Helper
-    const axesHelper = new THREE.AxesHelper(5);
-    scene.add(axesHelper);
-
-    // Camera and Orbit Controls
-    camera.position.set(0, 5, 10);
+    // Orbit Controls
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     // File Inputs and Buttons
     const objInput = document.getElementById("objInput");
     const mtlInput = document.getElementById("mtlInput");
-    const objSelectBtn = document.getElementById("obj-select-btn");
-    const mtlSelectBtn = document.getElementById("mtl-select-btn");
     const loadModelBtn = document.getElementById("load-model-btn");
     const errorMessage = document.getElementById("error-message");
 
-    let selectedFiles = { obj: null, mtl: null };
     let currentModel = null;
 
-    // Handle file selection
-    objSelectBtn.addEventListener("click", () => objInput.click());
-    mtlSelectBtn.addEventListener("click", () => mtlInput.click());
+    // File selection handlers
+    let selectedFiles = { obj: null, mtl: null };
 
     objInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file && file.name.toLowerCase().endsWith(".obj")) {
             selectedFiles.obj = file;
-            objSelectBtn.classList.add("active");
             console.log(`OBJ file selected: ${file.name}`);
+            updateLoadButtonState();
         } else {
             alert("Please select a valid .obj file.");
-            selectedFiles.obj = null;
-            objSelectBtn.classList.remove("active");
         }
-        updateLoadButtonState();
     });
 
     mtlInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
         if (file && file.name.toLowerCase().endsWith(".mtl")) {
             selectedFiles.mtl = file;
-            mtlSelectBtn.classList.add("active");
             console.log(`MTL file selected: ${file.name}`);
+            updateLoadButtonState();
         } else {
             alert("Please select a valid .mtl file.");
-            selectedFiles.mtl = null;
-            mtlSelectBtn.classList.remove("active");
         }
-        updateLoadButtonState();
     });
 
     loadModelBtn.addEventListener("click", () => {
@@ -84,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loadModelBtn.disabled = !(selectedFiles.obj && selectedFiles.mtl);
     }
 
-    // Load the model
+    // Load model
     function loadModel(objFile, mtlFile) {
         if (currentModel) {
             scene.remove(currentModel);
@@ -107,17 +93,22 @@ document.addEventListener("DOMContentLoaded", () => {
                     (object) => {
                         console.log("OBJ loaded successfully:", object);
 
-                        // Center and scale the model
+                        // Center and scale model
                         const box = new THREE.Box3().setFromObject(object);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
-                        object.position.sub(center); // Center the object
-                        const scaleFactor = 5 / Math.max(size.x, size.y, size.z); // Adjust scaling
+                        object.position.sub(center); // Center the model at (0, 0, 0)
+                        const scaleFactor = 10 / Math.max(size.x, size.y, size.z); // Adjust scaling to fit
                         object.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
                         scene.add(object);
                         currentModel = object;
+
                         console.log("Model added to scene.");
+                        // Position the camera
+                        camera.position.set(0, size.y * 2, size.z * 2 + 10);
+                        camera.lookAt(0, 0, 0);
+                        controls.update();
                     },
                     undefined,
                     (error) => {
@@ -142,7 +133,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     animate();
 
-    // Handle window resize
+    // Handle window resizing
     window.addEventListener("resize", () => {
         const width = renderContainer.clientWidth;
         const height = renderContainer.clientHeight;

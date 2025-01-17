@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const width = renderContainer.clientWidth;
         const height = renderContainer.clientHeight;
 
-        // Ensure `modelLoader` exists before updating properties
         if (modelLoader) {
             modelLoader.camera.aspect = width / height;
             modelLoader.camera.updateProjectionMatrix();
@@ -55,14 +54,13 @@ class ModelLoader {
         this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
         this.isMobileLookEnabled = false;
 
-        // Virtual Joystick
         this.joystick = null;
+        this.selectedFiles = { obj: null, mtl: null };
+        this.currentModel = null;
 
-        // Add axes to the center of the scene
         this.addAxesToCenter();
-
-        // Interaction setup
         this.setupInteractions(renderContainer);
+        this.setupFileInputs();
         this.setupDeviceOrientationControls();
         this.setupVirtualJoystick(renderContainer);
 
@@ -140,6 +138,85 @@ class ModelLoader {
         });
     }
 
+    setupFileInputs() {
+        const objInput = document.getElementById("objInput");
+        const mtlInput = document.getElementById("mtlInput");
+        const loadModelBtn = document.getElementById("load-model-btn");
+
+        objInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".obj")) {
+                this.selectedFiles.obj = file;
+                console.log(`OBJ file selected: ${file.name}`);
+            } else {
+                alert("Please select a valid .obj file");
+            }
+        });
+
+        mtlInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".mtl")) {
+                this.selectedFiles.mtl = file;
+                console.log(`MTL file selected: ${file.name}`);
+            } else {
+                alert("Please select a valid .mtl file");
+            }
+        });
+
+        loadModelBtn.addEventListener("click", () => {
+            if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+                this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
+            } else {
+                alert("Please select both OBJ and MTL files.");
+            }
+        });
+    }
+
+    loadModel(objFile, mtlFile) {
+        if (this.currentModel) {
+            this.scene.remove(this.currentModel);
+        }
+
+        const mtlLoader = new THREE.MTLLoader();
+        const objLoader = new THREE.OBJLoader();
+
+        mtlLoader.load(
+            URL.createObjectURL(mtlFile),
+            (materials) => {
+                materials.preload();
+                objLoader.setMaterials(materials);
+
+                objLoader.load(
+                    URL.createObjectURL(objFile),
+                    (object) => {
+                        this.currentModel = object;
+
+                        const box = new THREE.Box3().setFromObject(object);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
+
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scaleFactor = 5 / maxDim;
+                        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                        object.position.sub(center);
+                        this.scene.add(object);
+
+                        console.log("Model loaded successfully.");
+                    },
+                    undefined,
+                    (error) => {
+                        console.error("Error loading OBJ file:", error);
+                    }
+                );
+            },
+            undefined,
+            (error) => {
+                console.error("Error loading MTL file:", error);
+            }
+        );
+    }
+
     setupDeviceOrientationControls() {
         window.addEventListener(
             "deviceorientation",
@@ -151,7 +228,6 @@ class ModelLoader {
 
                     const { alpha, beta, gamma } = this.deviceOrientation;
 
-                    // Adjust camera rotation
                     this.camera.rotation.x = THREE.MathUtils.degToRad(beta - 90);
                     this.camera.rotation.y = THREE.MathUtils.degToRad(alpha);
                 }
@@ -172,7 +248,7 @@ class ModelLoader {
         this.joystick.on("move", (evt, data) => {
             if (!this.isFirstPerson) return;
 
-            const force = data.force * 0.1; // Adjust movement speed based on joystick force
+            const force = data.force * 0.1;
             const angle = data.angle.radian;
 
             this.firstPersonVelocity.x = Math.sin(angle) * force;
@@ -191,7 +267,6 @@ class ModelLoader {
             const moveVector = this.firstPersonVelocity.clone().applyMatrix4(
                 new THREE.Matrix4().makeRotationY(this.camera.rotation.y)
             );
-
             this.camera.position.add(moveVector);
         } else {
             this.controls.update();

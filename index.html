@@ -153,7 +153,73 @@
                 bottom: 5px;
                 gap: 5px;
             }
-        }
+        }.overlay-control {
+    position: fixed; /* Keeps buttons inside the viewport */
+    background-color: rgba(255,255,255,0.7);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 4px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+    font-size: 16px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.overlay-control:hover {
+    background-color: rgba(230,230,230,0.9);
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+}
+
+/* Specific Buttons */
+#first-person-btn {
+    top: 10px;
+    left: 10px; /* Positioned relative to the viewport */
+}
+
+#mobile-look-btn {
+    top: 10px;
+    left: 60px; /* Adjust spacing based on button sizes */
+}
+
+#fullscreen-btn {
+    top: 10px;
+    right: 10px; /* Keep this button at the top-right */
+}
+
+/* File Controls at the Bottom */
+.file-controls {
+    position: fixed;
+    bottom: 10px; /* Ensure it stays within the viewport */
+    width: 100%; /* Full width for responsiveness */
+    display: flex;
+    flex-direction: row; /* Layout buttons in a row */
+    justify-content: space-around; /* Spread buttons evenly */
+    gap: 10px;
+}
+
+/* Buttons Adjustments for Smaller Screens */
+@media (max-width: 600px) {
+    .overlay-control {
+        font-size: 14px;
+        min-width: 35px;
+        height: 35px;
+    }
+    
+    .file-controls {
+        flex-direction: column; /* Stack buttons vertically on small screens */
+        gap: 5px;
+    }
+
+    #virtual-joystick {
+        width: 80px;
+        height: 80px;
+    }
+}
     </style>
 </head>
 <body>

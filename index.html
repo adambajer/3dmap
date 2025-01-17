@@ -1,3 +1,4 @@
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -87,7 +88,7 @@
             opacity: 0.9;
         }
         #virtual-joystick.hidden {
-            display: none; /* Hide joystick when needed */
+            display: none;
         }
         @media (max-width: 600px) {
             #virtual-joystick {
@@ -104,54 +105,23 @@
         <input type="file" id="objInput" accept=".obj" style="display:none;">
         <input type="file" id="mtlInput" accept=".mtl" style="display:none;">
         
-        <button id="first-person-btn" class="overlay-control">👣</button>
-        <button id="mobile-look-btn" class="overlay-control">📱</button>
-        <button id="fullscreen-btn" class="overlay-control">⛶</button>
+        <button id="first-person-btn" class="overlay-control">ðŸ‘£</button>
+        <button id="mobile-look-btn" class="overlay-control">ðŸ“±</button>
+        <button id="fullscreen-btn" class="overlay-control">â›¶</button>
         
         <div id="virtual-joystick"></div>
+
+        <!-- File selection controls -->
+        <div class="file-controls">
+            <div class="file-input-row">
+                <button id="obj-select-btn" class="overlay-control file-select-btn">ðŸ—‚ï¸</button>
+                <button id="mtl-select-btn" class="overlay-control file-select-btn">ðŸ—„ï¸</button>
+                <button id="load-model-btn" class="overlay-control" disabled>ðŸš€</button>
+            </div>
+        </div>
     </div>
     
-    <script>
-        let joystickManager;
-
-        // Joystick Initialization
-        function initializeJoystick() {
-            const joystickContainer = document.getElementById('virtual-joystick');
-            if (joystickManager) joystickManager.destroy(); // Cleanup any existing joystick
-            joystickManager = nipplejs.create({
-                zone: joystickContainer,
-                mode: 'static',
-                position: { left: '50%', top: '50%' },
-                color: 'blue',
-                size: 100,
-            });
-
-            joystickManager.on('move', (event, data) => {
-                if (data && data.direction) {
-                    const { x, y } = data.vector; // Only use x and y axis
-                    console.log(`Moving on X: ${x}, Y: ${y}`);
-                    // Use x and y to move your object; Z-axis movement should be ignored
-                }
-            });
-
-            joystickManager.on('end', () => {
-                console.log('Joystick released');
-            });
-        }
-
-        // Toggle Mobile Look Mode
-        document.getElementById('mobile-look-btn').addEventListener('click', () => {
-            const joystick = document.getElementById('virtual-joystick');
-            if (joystick.classList.contains('hidden')) {
-                joystick.classList.remove('hidden'); // Show joystick
-                initializeJoystick();
-            } else {
-                joystick.classList.add('hidden'); // Hide joystick
-            }
-        });
-
-        // Initialize joystick on load
-        initializeJoystick();
-    </script>
+    <!-- Load the external app.js -->
+    <script src="app.js"></script>
 </body>
 </html>

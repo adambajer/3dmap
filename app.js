@@ -179,7 +179,7 @@ class ModelLoader {
         this.renderer.render(this.scene, this.camera);
     }
 }
-
+ 
 document.addEventListener("DOMContentLoaded", () => {
     const renderContainer = document.getElementById("render-container");
     new ModelLoader(renderContainer);
@@ -188,8 +188,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const width = renderContainer.clientWidth;
         const height = renderContainer.clientHeight;
 
-        modelLoader.camera.aspect = width / height;
-        modelLoader.camera.updateProjectionMatrix();
-        modelLoader.renderer.setSize(width, height);
+        ModelLoader.camera.aspect = width / height;
+        ModelLoader.camera.updateProjectionMatrix();
+        ModelLoader.renderer.setSize(width, height);
     });
 });

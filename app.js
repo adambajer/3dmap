@@ -1,6 +1,13 @@
 // app.js
 
 // Ensure that THREE, MTLLoader, OBJLoader, OrbitControls, and nipplejs are loaded via script tags in your HTML.
+// Example (CDN-based for r140):
+// <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r140/three.min.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/OBJLoader.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/MTLLoader.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
+// <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.8.0/dist/nipplejs.min.js"></script>
+// Then <script src="app.js"></script>
 
 let modelLoader; // Declare globally
 
@@ -25,10 +32,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 class ModelLoader {
     constructor(renderContainer) {
-        // Initialize Three.js scene, camera, renderer, lights, controls, etc.
+        // Create Scene
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xe0e0e0);
 
+        // Camera
         this.camera = new THREE.PerspectiveCamera(
             75,
             renderContainer.clientWidth / renderContainer.clientHeight,
@@ -37,21 +45,21 @@ class ModelLoader {
         );
         this.camera.position.set(0, 1.6, 5); // Simulate head height
 
+        // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio); // Optional for better quality
+        this.renderer.setPixelRatio(window.devicePixelRatio); // For higher DPI screens
         renderContainer.appendChild(this.renderer.domElement);
 
-        // Add ambient light
+        // Lights
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
-        // Add directional light
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 5, 5);
         this.scene.add(directionalLight);
 
-        // Add OrbitControls
+        // OrbitControls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.25;
@@ -63,7 +71,7 @@ class ModelLoader {
 
         // Device orientation controls variables
         this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
- 
+
         // Virtual joystick
         this.joystick = null;
 
@@ -71,29 +79,23 @@ class ModelLoader {
         this.selectedFiles = { obj: null, mtl: null };
         this.currentModel = null;
 
-        // Add axes helper
+        // Add reference helpers/objects
         this.addAxesToCenter();
-
-        // Add default cube for testing
         this.addDefaultCube();
- 
 
-        // Setup interactions
+        // Setup various interactions
         this.setupInteractions();
-
-        // Setup file inputs
         this.setupFileInputs();
-
-        // Setup device orientation controls
         this.setupDeviceOrientationControls();
-
-        // Setup virtual joystick
         this.setupVirtualJoystick();
 
-        // Start animation loop
+        // Begin rendering/animation
         this.animate();
     }
 
+    // -------------------------------------------------------
+    //  Add helpers / test geometry
+    // -------------------------------------------------------
     addAxesToCenter() {
         const length = 5;
 
@@ -126,25 +128,28 @@ class ModelLoader {
         const geometry = new THREE.BoxGeometry(1, 1, 1);
         const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
         const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0.5, 0); // Position it above the ground
+        cube.position.set(0, 0.5, 0); // Raise it slightly above origin
         this.scene.add(cube);
     }
 
- 
-
+    // -------------------------------------------------------
+    //  Interactions
+    // -------------------------------------------------------
     setupInteractions() {
         const firstPersonBtn = document.getElementById("first-person-btn");
-        firstPersonBtn.addEventListener("click", () => {
-            this.isFirstPerson = !this.isFirstPerson;
+        if (firstPersonBtn) {
+            firstPersonBtn.addEventListener("click", () => {
+                this.isFirstPerson = !this.isFirstPerson;
 
-            if (this.isFirstPerson) {
-                this.controls.enabled = false;
-                this.renderer.domElement.requestPointerLock();
-            } else {
-                this.controls.enabled = true;
-                document.exitPointerLock();
-            }
-        });
+                if (this.isFirstPerson) {
+                    this.controls.enabled = false;
+                    this.renderer.domElement.requestPointerLock();
+                } else {
+                    this.controls.enabled = true;
+                    document.exitPointerLock();
+                }
+            });
+        }
 
         window.addEventListener("keydown", (event) => {
             if (!this.isFirstPerson) return;
@@ -176,12 +181,20 @@ class ModelLoader {
         });
     }
 
+    // -------------------------------------------------------
+    //  File inputs (OBJ / MTL)
+    // -------------------------------------------------------
     setupFileInputs() {
         const objInput = document.getElementById("objInput");
         const mtlInput = document.getElementById("mtlInput");
         const loadModelBtn = document.getElementById("load-model-btn");
         const objSelectBtn = document.getElementById("obj-select-btn");
         const mtlSelectBtn = document.getElementById("mtl-select-btn");
+
+        if (!objInput || !mtlInput || !loadModelBtn || !objSelectBtn || !mtlSelectBtn) {
+            console.warn("File input elements not found in HTML. Skipping file input setup.");
+            return;
+        }
 
         // Trigger hidden file input when select button is clicked
         objSelectBtn.addEventListener("click", () => {
@@ -233,7 +246,6 @@ class ModelLoader {
         });
     }
 
-    // Helper method to check if both files are selected
     checkFilesSelected(loadModelBtn) {
         if (this.selectedFiles.obj && this.selectedFiles.mtl) {
             loadModelBtn.disabled = false;
@@ -242,6 +254,9 @@ class ModelLoader {
         }
     }
 
+    // -------------------------------------------------------
+    //  Load OBJ/MTL model
+    // -------------------------------------------------------
     loadModel(objFile, mtlFile) {
         if (this.currentModel) {
             this.scene.remove(this.currentModel);
@@ -268,28 +283,38 @@ class ModelLoader {
                         console.log("OBJ file loaded successfully.");
                         this.currentModel = object;
 
+                        // Compute bounding box for centering and scaling
                         const box = new THREE.Box3().setFromObject(object);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
 
                         console.log("Model bounding box:", box);
 
+                        // Scale so that the largest dimension is ~5 units
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scaleFactor = 5 / maxDim;
                         object.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
+                        // Center the object at (0,0,0)
                         object.position.sub(center);
+
                         this.scene.add(object);
 
                         console.log("Model added to the scene.");
-                        document.getElementById("error-message").innerText = "";
+                        const errorMessageEl = document.getElementById("error-message");
+                        if (errorMessageEl) {
+                            errorMessageEl.innerText = "";
+                        }
                     },
                     (xhr) => {
                         console.log((xhr.loaded / xhr.total) * 100 + "% loaded OBJ");
                     },
                     (error) => {
                         console.error("Error loading OBJ file:", error);
-                        document.getElementById("error-message").innerText = "Error loading OBJ file.";
+                        const errorMessageEl = document.getElementById("error-message");
+                        if (errorMessageEl) {
+                            errorMessageEl.innerText = "Error loading OBJ file.";
+                        }
                     }
                 );
             },
@@ -298,11 +323,17 @@ class ModelLoader {
             },
             (error) => {
                 console.error("Error loading MTL file:", error);
-                document.getElementById("error-message").innerText = "Error loading MTL file.";
+                const errorMessageEl = document.getElementById("error-message");
+                if (errorMessageEl) {
+                    errorMessageEl.innerText = "Error loading MTL file.";
+                }
             }
         );
     }
 
+    // -------------------------------------------------------
+    //  Mobile device orientation
+    // -------------------------------------------------------
     setupDeviceOrientationControls() {
         window.addEventListener(
             "deviceorientation",
@@ -323,8 +354,16 @@ class ModelLoader {
         );
     }
 
+    // -------------------------------------------------------
+    //  Virtual Joystick
+    // -------------------------------------------------------
     setupVirtualJoystick() {
         const joystickContainer = document.getElementById("virtual-joystick");
+        if (!joystickContainer) {
+            console.warn("No #virtual-joystick container found in HTML. Skipping joystick setup.");
+            return;
+        }
+
         this.joystick = nipplejs.create({
             zone: joystickContainer,
             mode: "static",
@@ -348,15 +387,24 @@ class ModelLoader {
         });
     }
 
-function animate() {
-  requestAnimationFrame(animate);
+    // -------------------------------------------------------
+    //  Animation loop
+    // -------------------------------------------------------
+    animate() {
+        requestAnimationFrame(() => this.animate());
 
-  // Required for damping (if enabled)
-  controls.update();
+        // If in first-person mode, apply velocity
+        if (this.isFirstPerson) {
+            // Move camera in the direction based on rotation.y
+            const moveVector = this.firstPersonVelocity.clone().applyMatrix4(
+                new THREE.Matrix4().makeRotationY(this.camera.rotation.y)
+            );
+            this.camera.position.add(moveVector);
+        } else {
+            // Update OrbitControls (damping, etc.)
+            this.controls.update();
+        }
 
-  // Render the scene
-  renderer.render(scene, camera);
-}
-
-animate();
+        this.renderer.render(this.scene, this.camera);
+    }
 }

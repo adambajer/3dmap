@@ -8,7 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/MTLLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.10.0/nipplejs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.8.0/dist/nipplejs.min.js"></script>
+
     <style>
         * {
             box-sizing: border-box;
@@ -170,7 +171,8 @@
         <input type="file" id="mtlInput" accept=".mtl">
         
         <!-- Control buttons -->
-        <button id="first-person-btn" class="overlay-control">👣</button>
+<button id="first-person-btn">First Person Mode</button>
+<div id="virtual-joystick"></div>
         <button id="mobile-look-btn" class="overlay-control">📱</button>
         <button id="fullscreen-btn" class="overlay-control">⛶</button>
         
@@ -188,9 +190,7 @@
                 <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
             </div>
         </div>
-
-        <!-- Virtual joystick -->
-        <div id="virtual-joystick"></div>
+ 
     </div>
     
     <script src="app.js"></script>

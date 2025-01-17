@@ -63,6 +63,7 @@
             right: 10px;
         }
         .file-controls {
+            position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
@@ -77,6 +78,62 @@
             align-items: center;
             gap: 20px;
         }
+        #load-model-btn {
+            background-color: rgba(100,200,100,0.7);
+            padding: 0 15px;
+            font-size: 14px;
+        }
+        #load-model-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .file-select-btn {
+            position: relative;
+            width: 50px;
+            opacity: 0.7;
+        }
+        .file-select-btn.active {
+            opacity: 1;
+            background-color: rgba(100,200,100,0.7);
+        }
+        .file-type-label {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            color: #333;
+            white-space: nowrap;
+        }
+        #part-info, #mode-info, #file-type-info, #error-message {
+            position: absolute;
+            background-color: rgba(255,255,255,0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 10;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #part-info { 
+            bottom: 120px; 
+            left: 10px; 
+        }
+        #mode-info { 
+            bottom: 120px; 
+            right: 10px; 
+        }
+        #file-type-info { 
+            bottom: 160px; 
+            left: 10px; 
+        }
+        #error-message { 
+            bottom: 160px; 
+            right: 10px; 
+            color: red; 
+        }
         #virtual-joystick {
             position: fixed;
             bottom: 20px;
@@ -84,32 +141,45 @@
             width: 100px;
             height: 100px;
             z-index: 20;
-            opacity: 0.9;
+            opacity: 0.7;
         }
-        #virtual-joystick.hidden {
+        #objInput, #mtlInput {
             display: none;
         }
         @media (max-width: 600px) {
+            .overlay-control {
+                min-width: 35px;
+                height: 35px;
+                font-size: 14px;
+            }
+            .file-controls {
+                flex-direction: column;
+                gap: 10px;
+            }
             #virtual-joystick {
                 width: 80px;
                 height: 80px;
-                bottom: 10px;
-                right: 10px;
             }
         }
     </style>
 </head>
 <body>
     <div id="render-container">
-        <input type="file" id="objInput" accept=".obj" style="display:none;">
-        <input type="file" id="mtlInput" accept=".mtl" style="display:none;">
+        <!-- Hidden inputs for file selection -->
+        <input type="file" id="objInput" accept=".obj">
+        <input type="file" id="mtlInput" accept=".mtl">
         
+        <!-- Control buttons -->
         <button id="first-person-btn" class="overlay-control">👣</button>
         <button id="mobile-look-btn" class="overlay-control">📱</button>
         <button id="fullscreen-btn" class="overlay-control">⛶</button>
         
-        <div id="virtual-joystick"></div>
-
+        <!-- Information displays -->
+        <div id="part-info"></div>
+        <div id="mode-info"></div>
+        <div id="file-type-info"></div>
+        <div id="error-message"></div>
+        
         <!-- File selection controls -->
         <div class="file-controls">
             <div class="file-input-row">
@@ -118,9 +188,11 @@
                 <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
             </div>
         </div>
+
+        <!-- Virtual joystick -->
+        <div id="virtual-joystick"></div>
     </div>
     
-    <!-- Load the external app.js -->
     <script src="app.js"></script>
 </body>
 </html>

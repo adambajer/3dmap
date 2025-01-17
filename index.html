@@ -1,3 +1,4 @@
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -62,20 +63,20 @@
             right: 10px;
         }
         .file-controls {
-      
-            width: 100%;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 0 10px;
+            flex-direction: row;
+            gap: 20px;
         }
         .file-input-row {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 10px;
-            width: 100%;
+            gap: 20px;
         }
         #load-model-btn {
             background-color: rgba(100,200,100,0.7);
@@ -134,6 +135,9 @@
             color: red; 
         }
         #virtual-joystick {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
             width: 100px;
             height: 100px;
             z-index: 20;
@@ -149,121 +153,45 @@
                 font-size: 14px;
             }
             .file-controls {
-                bottom: 5px;
-                gap: 5px;
+                flex-direction: column;
+                gap: 10px;
             }
-        }.overlay-control {
-    position: fixed; /* Keeps buttons inside the viewport */
-    background-color: rgba(255,255,255,0.7);
-    border: 1px solid rgba(0,0,0,0.1);
-    border-radius: 4px;
-    min-width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s;
-    z-index: 10;
-    font-size: 16px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-.overlay-control:hover {
-    background-color: rgba(230,230,230,0.9);
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
-}
-
-/* Specific Buttons */
-#first-person-btn {
-    top: 10px;
-    left: 10px; /* Positioned relative to the viewport */
-}
-
-#mobile-look-btn {
-    top: 10px;
-    left: 60px; /* Adjust spacing based on button sizes */
-}
-
-#fullscreen-btn {
-    top: 10px;
-    right: 10px; /* Keep this button at the top-right */
-}
-
-/* File Controls at the Bottom */
-.file-controls {
-    position: fixed;
-    bottom: 10px; /* Ensure it stays within the viewport */
-    width: 100%; /* Full width for responsiveness */
-    display: flex;
-    flex-direction: row; /* Layout buttons in a row */
-    justify-content: space-around; /* Spread buttons evenly */
-    gap: 10px;
-}
-
-/* Buttons Adjustments for Smaller Screens */
-@media (max-width: 600px) {
-    .overlay-control {
-        font-size: 14px;
-        min-width: 35px;
-        height: 35px;
-    }
-    
-    .file-controls {
-        flex-direction: column; /* Stack buttons vertically on small screens */
-        gap: 5px;
-    }
-
-    #virtual-joystick {
-        width: 80px;
-        height: 80px;
-    }
-}#virtual-joystick {
-    position: fixed; /* Ensure it doesn't overlap other elements */
-    bottom: 20px;    /* Adjust to place in the bottom-right corner */
-    right: 20px;     /* Keep it away from file controls */
-    width: 100px;
-    height: 100px;
-    z-index: 20;
-    opacity: 0.7;
-}
-
-.file-controls {
-    position: fixed; /* Keep file controls in the center-bottom */
-    bottom: 20px;    /* Adjust to avoid joystick */
-    left: 50%;       /* Center horizontally */
-    transform: translateX(-50%); /* Center the file controls */
-    width: auto;     /* Adjust width based on content */
-    display: flex;
-    flex-direction: row; /* Keep buttons in a row */
-    gap: 10px;
-}
+            #virtual-joystick {
+                width: 80px;
+                height: 80px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="render-container">
-    <input type="file" id="objInput" accept=".obj">
-    <input type="file" id="mtlInput" accept=".mtl">
-    
-    <button id="first-person-btn" class="overlay-control">👣</button>
-    <button id="mobile-look-btn" class="overlay-control">📱</button>
-    <button id="fullscreen-btn" class="overlay-control">⛶</button>
-    
-    <div id="part-info"></div>
-    <div id="mode-info"></div>
-    <div id="file-type-info"></div>
-    <div id="error-message"></div>
-    
-    <div class="file-controls">
-        <div class="file-input-row">
-            <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
-            <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
-            <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
+        <!-- Hidden inputs for file selection -->
+        <input type="file" id="objInput" accept=".obj">
+        <input type="file" id="mtlInput" accept=".mtl">
+        
+        <!-- Control buttons -->
+        <button id="first-person-btn" class="overlay-control">👣</button>
+        <button id="mobile-look-btn" class="overlay-control">📱</button>
+        <button id="fullscreen-btn" class="overlay-control">⛶</button>
+        
+        <!-- Information displays -->
+        <div id="part-info"></div>
+        <div id="mode-info"></div>
+        <div id="file-type-info"></div>
+        <div id="error-message"></div>
+        
+        <!-- File selection controls -->
+        <div class="file-controls">
+            <div class="file-input-row">
+                <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
+                <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
+                <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
+            </div>
         </div>
-    </div>
 
-    <div id="virtual-joystick"></div>
-</div>
+        <!-- Virtual joystick -->
+        <div id="virtual-joystick"></div>
+    </div>
     
     <script src="app.js"></script>
 </body>

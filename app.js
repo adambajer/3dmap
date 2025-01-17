@@ -39,6 +39,7 @@ class ModelLoader {
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
+        this.renderer.setPixelRatio(window.devicePixelRatio); // Optional for better quality
         renderContainer.appendChild(this.renderer.domElement);
 
         // Add ambient light
@@ -74,8 +75,14 @@ class ModelLoader {
         // Add axes helper
         this.addAxesToCenter();
 
+        // Add default cube for testing
+        this.addDefaultCube();
+
+        // Add light helpers
+        this.addLightHelpers();
+
         // Setup interactions
-        this.setupInteractions(renderContainer);
+        this.setupInteractions();
 
         // Setup file inputs
         this.setupFileInputs();
@@ -84,7 +91,7 @@ class ModelLoader {
         this.setupDeviceOrientationControls();
 
         // Setup virtual joystick
-        this.setupVirtualJoystick(renderContainer);
+        this.setupVirtualJoystick();
 
         // Start animation loop
         this.animate();
@@ -118,7 +125,29 @@ class ModelLoader {
         this.scene.add(new THREE.Line(zAxisGeometry, zAxisMaterial));
     }
 
-    setupInteractions(renderContainer) {
+    addDefaultCube() {
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const cube = new THREE.Mesh(geometry, material);
+        cube.position.set(0, 0.5, 0); // Position it above the ground
+        this.scene.add(cube);
+    }
+
+    addLightHelpers() {
+        const ambientLight = this.scene.children.find(obj => obj.type === "AmbientLight");
+        if (ambientLight) {
+            const ambientLightHelper = new THREE.AmbientLightHelper(ambientLight, 1);
+            this.scene.add(ambientLightHelper);
+        }
+
+        const directionalLight = this.scene.children.find(obj => obj.type === "DirectionalLight");
+        if (directionalLight) {
+            const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
+            this.scene.add(directionalLightHelper);
+        }
+    }
+
+    setupInteractions() {
         const firstPersonBtn = document.getElementById("first-person-btn");
         firstPersonBtn.addEventListener("click", () => {
             this.isFirstPerson = !this.isFirstPerson;
@@ -219,6 +248,7 @@ class ModelLoader {
         });
     }
 
+    // Helper method to check if both files are selected
     checkFilesSelected(loadModelBtn) {
         if (this.selectedFiles.obj && this.selectedFiles.mtl) {
             loadModelBtn.disabled = false;
@@ -236,22 +266,28 @@ class ModelLoader {
         const mtlLoader = new THREE.MTLLoader();
         const objLoader = new THREE.OBJLoader();
 
-        // Load MTL file first
+        console.log("Starting to load MTL file...");
+
         mtlLoader.load(
             URL.createObjectURL(mtlFile),
             (materials) => {
+                console.log("MTL file loaded successfully.");
                 materials.preload();
                 objLoader.setMaterials(materials);
 
-                // Then load OBJ file
+                console.log("Starting to load OBJ file...");
+
                 objLoader.load(
                     URL.createObjectURL(objFile),
                     (object) => {
+                        console.log("OBJ file loaded successfully.");
                         this.currentModel = object;
 
                         const box = new THREE.Box3().setFromObject(object);
                         const center = box.getCenter(new THREE.Vector3());
                         const size = box.getSize(new THREE.Vector3());
+
+                        console.log("Model bounding box:", box);
 
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scaleFactor = 5 / maxDim;
@@ -260,11 +296,11 @@ class ModelLoader {
                         object.position.sub(center);
                         this.scene.add(object);
 
-                        console.log("Model loaded successfully.");
+                        console.log("Model added to the scene.");
                         document.getElementById("error-message").innerText = "";
                     },
                     (xhr) => {
-                        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+                        console.log((xhr.loaded / xhr.total) * 100 + "% loaded OBJ");
                     },
                     (error) => {
                         console.error("Error loading OBJ file:", error);
@@ -302,7 +338,7 @@ class ModelLoader {
         );
     }
 
-    setupVirtualJoystick(renderContainer) {
+    setupVirtualJoystick() {
         const joystickContainer = document.getElementById("virtual-joystick");
         this.joystick = nipplejs.create({
             zone: joystickContainer,

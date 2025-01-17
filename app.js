@@ -241,45 +241,91 @@ class ModelLoader {
         }
     }
 loadModel(objFile, mtlFile) {
+    // Clear error message
+    document.getElementById("error-message").textContent = "";
+
+    // Remove existing model
+    if (this.currentModel) {
+        this.scene.remove(this.currentModel);
+        this.currentModel = null;
+    }
+
+    // Create loaders
     const mtlLoader = new THREE.MTLLoader();
     const objLoader = new THREE.OBJLoader();
 
-    mtlLoader.load(
-        URL.createObjectURL(mtlFile),
-        (materials) => {
-            console.log("MTL loaded successfully");
-            materials.preload();
-            objLoader.setMaterials(materials);
+    try {
+        // Load MTL first
+        mtlLoader.load(
+            URL.createObjectURL(mtlFile),
+            (materials) => {
+                materials.preload();
+                objLoader.setMaterials(materials);
 
-            objLoader.load(
-                URL.createObjectURL(objFile),
-                (object) => {
-                    console.log("OBJ loaded successfully");
+                // Then load OBJ
+                objLoader.load(
+                    URL.createObjectURL(objFile),
+                    (object) => {
+                        this.currentModel = object;
 
-                    // Debugging: Log object position and scale
-                    console.log("Before centering:", object.position, object.scale);
+                        // Traverse through all children to name parts and setup interaction
+                        object.traverse((child) => {
+                            if (child.isMesh) {
+                                // Optional: Add unique names to meshes if they don't have one
+                                if (!child.name) {
+                                    child.name = `Mesh_${Math.random().toString(36).substr(2, 9)}`;
+                                }
+                            }
+                        });
 
-                    // Center and scale object
-                    const box = new THREE.Box3().setFromObject(object);
-                    const center = box.getCenter(new THREE.Vector3());
-                    object.position.sub(center); // Center the object
-                    console.log("After centering:", object.position);
+                        // Center the model
+                        const box = new THREE.Box3().setFromObject(object);
+                        const center = box.getCenter(new THREE.Vector3());
+                        const size = box.getSize(new THREE.Vector3());
 
-                    const size = box.getSize(new THREE.Vector3()).length();
-                    const scaleFactor = 5 / size;
-                    object.scale.setScalar(scaleFactor);
-                    console.log("After scaling:", object.scale);
+                        // Store scene boundaries (if needed elsewhere)
+                        this.sceneBoundaries = {
+                            min: box.min.clone(),
+                            max: box.max.clone(),
+                        };
 
-                    this.scene.add(object);
-                    console.log("Model added to scene");
-                },
-                (xhr) => console.log((xhr.loaded / xhr.total) * 100 + "% loaded"),
-                (error) => console.error("Error loading OBJ:", error)
-            );
-        },
-        undefined,
-        (error) => console.error("Error loading MTL:", error)
-    );
+                        // Scale model to fit the scene
+                        const maxDim = Math.max(size.x, size.y, size.z);
+                        const scaleFactor = 5 / maxDim; // Adjust scaling as needed
+                        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+                        // Center the model in the scene
+                        object.position.sub(center);
+
+                        // Add the model to the scene
+                        this.scene.add(object);
+
+                        // Adjust the camera to fit the model
+                        if (typeof this.fitCameraToObject === "function") {
+                            this.fitCameraToObject(object, size);
+                        }
+                    },
+                    // onProgress
+                    (xhr) => console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`),
+                    // onError
+                    (error) => {
+                        console.error("Error loading OBJ:", error);
+                        document.getElementById("error-message").textContent = "Error loading OBJ file.";
+                    }
+                );
+            },
+            // onProgress
+            (xhr) => console.log(`${(xhr.loaded / xhr.total) * 100}% loaded MTL`),
+            // onError
+            (error) => {
+                console.error("Error loading MTL:", error);
+                document.getElementById("error-message").textContent = "Error loading MTL file.";
+            }
+        );
+    } catch (error) {
+        console.error("Unexpected error:", error);
+        document.getElementById("error-message").textContent = "Unexpected error loading model.";
+    }
 }
 
 

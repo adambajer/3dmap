@@ -328,6 +328,13 @@ loadModel(objFile, mtlFile) {
     }
 }
 
+fitCameraToObject(object, size) {
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const cameraDistance = maxDim * 2; // Adjust multiplier for zoom distance
+    this.camera.position.set(cameraDistance, cameraDistance, cameraDistance);
+    this.camera.lookAt(object.position);
+    this.controls.update(); // Update OrbitControls
+}
 
     // ----------------------------------------------------
     // Device Orientation (mobile look)

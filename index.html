@@ -218,39 +218,52 @@
         width: 80px;
         height: 80px;
     }
+}#virtual-joystick {
+    position: fixed; /* Ensure it doesn't overlap other elements */
+    bottom: 20px;    /* Adjust to place in the bottom-right corner */
+    right: 20px;     /* Keep it away from file controls */
+    width: 100px;
+    height: 100px;
+    z-index: 20;
+    opacity: 0.7;
+}
+
+.file-controls {
+    position: fixed; /* Keep file controls in the center-bottom */
+    bottom: 20px;    /* Adjust to avoid joystick */
+    left: 50%;       /* Center horizontally */
+    transform: translateX(-50%); /* Center the file controls */
+    width: auto;     /* Adjust width based on content */
+    display: flex;
+    flex-direction: row; /* Keep buttons in a row */
+    gap: 10px;
 }
     </style>
 </head>
 <body>
     <div id="render-container">
-        <input type="file" id="objInput" accept=".obj">
-        <input type="file" id="mtlInput" accept=".mtl">
-        
-        <button id="first-person-btn" class="overlay-control">👣</button>
-        <button id="mobile-look-btn" class="overlay-control">📱</button>
-        <button id="fullscreen-btn" class="overlay-control">⛶</button>
-        
-        <div id="part-info"></div>
-        <div id="mode-info"></div>
-        <div id="file-type-info"></div>
-        <div id="error-message"></div>
-        
-        <div class="file-controls">
-            <div class="file-input-row">
-                <button id="obj-select-btn" class="overlay-control file-select-btn">
-                    🗂️
-                    <span class="file-type-label">.obj</span>
-                </button>
-                <button id="mtl-select-btn" class="overlay-control file-select-btn">
-                    🗄️
-                    <span class="file-type-label">.mtl</span>
-                </button>
-                <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
-            </div>
+    <input type="file" id="objInput" accept=".obj">
+    <input type="file" id="mtlInput" accept=".mtl">
+    
+    <button id="first-person-btn" class="overlay-control">👣</button>
+    <button id="mobile-look-btn" class="overlay-control">📱</button>
+    <button id="fullscreen-btn" class="overlay-control">⛶</button>
+    
+    <div id="part-info"></div>
+    <div id="mode-info"></div>
+    <div id="file-type-info"></div>
+    <div id="error-message"></div>
+    
+    <div class="file-controls">
+        <div class="file-input-row">
+            <button id="obj-select-btn" class="overlay-control file-select-btn">🗂️</button>
+            <button id="mtl-select-btn" class="overlay-control file-select-btn">🗄️</button>
+            <button id="load-model-btn" class="overlay-control" disabled>🚀</button>
         </div>
-                    <div id="virtual-joystick"></div>
-
     </div>
+
+    <div id="virtual-joystick"></div>
+</div>
     
     <script src="app.js"></script>
 </body>

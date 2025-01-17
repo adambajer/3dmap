@@ -1,3 +1,25 @@
+let modelLoader; // Declare globally
+
+document.addEventListener("DOMContentLoaded", () => {
+    const renderContainer = document.getElementById("render-container");
+
+    // Initialize the model loader and assign it to the global variable
+    modelLoader = new ModelLoader(renderContainer);
+
+    // Resize handler: Ensure proper resizing of the scene
+    window.addEventListener("resize", () => {
+        const width = renderContainer.clientWidth;
+        const height = renderContainer.clientHeight;
+
+        // Ensure `modelLoader` exists before updating properties
+        if (modelLoader) {
+            modelLoader.camera.aspect = width / height;
+            modelLoader.camera.updateProjectionMatrix();
+            modelLoader.renderer.setSize(width, height);
+        }
+    });
+});
+
 class ModelLoader {
     constructor(renderContainer) {
         this.scene = new THREE.Scene();
@@ -9,7 +31,7 @@ class ModelLoader {
             0.1,
             1000
         );
-        this.camera.position.set(0, 1.6, 5); // Simulate head-level height
+        this.camera.position.set(0, 1.6, 5); // Simulate head height
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
@@ -22,7 +44,6 @@ class ModelLoader {
         directionalLight.position.set(5, 5, 5);
         this.scene.add(directionalLight);
 
-        // Orbit and First-Person Controls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.25;
@@ -37,12 +58,12 @@ class ModelLoader {
         // Virtual Joystick
         this.joystick = null;
 
-        // Add axes
+        // Add axes to the center of the scene
         this.addAxesToCenter();
 
         // Interaction setup
         this.setupInteractions(renderContainer);
-        this.setupDeviceOrientationControls(renderContainer);
+        this.setupDeviceOrientationControls();
         this.setupVirtualJoystick(renderContainer);
 
         this.animate();
@@ -179,17 +200,3 @@ class ModelLoader {
         this.renderer.render(this.scene, this.camera);
     }
 }
- 
-document.addEventListener("DOMContentLoaded", () => {
-    const renderContainer = document.getElementById("render-container");
-    new ModelLoader(renderContainer);
-
-    window.addEventListener("resize", () => {
-        const width = renderContainer.clientWidth;
-        const height = renderContainer.clientHeight;
-
-        ModelLoader.camera.aspect = width / height;
-        ModelLoader.camera.updateProjectionMatrix();
-        ModelLoader.renderer.setSize(width, height);
-    });
-});

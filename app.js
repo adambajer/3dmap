@@ -77,9 +77,7 @@ class ModelLoader {
 
         // Add default cube for testing
         this.addDefaultCube();
-
-        // Add light helpers
-        this.addLightHelpers();
+ 
 
         // Setup interactions
         this.setupInteractions();
@@ -133,19 +131,7 @@ class ModelLoader {
         this.scene.add(cube);
     }
 
-    addLightHelpers() {
-        const ambientLight = this.scene.children.find(obj => obj.type === "AmbientLight");
-        if (ambientLight) {
-            const ambientLightHelper = new THREE.AmbientLightHelper(ambientLight, 1);
-            this.scene.add(ambientLightHelper);
-        }
-
-        const directionalLight = this.scene.children.find(obj => obj.type === "DirectionalLight");
-        if (directionalLight) {
-            const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
-            this.scene.add(directionalLightHelper);
-        }
-    }
+ 
 
     setupInteractions() {
         const firstPersonBtn = document.getElementById("first-person-btn");

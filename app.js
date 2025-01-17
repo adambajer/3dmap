@@ -1,3 +1,7 @@
+// app.js
+
+// Ensure that THREE, MTLLoader, OBJLoader, OrbitControls, and nipplejs are loaded via script tags in your HTML.
+
 let modelLoader; // Declare globally
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -21,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 class ModelLoader {
     constructor(renderContainer) {
+        // Initialize Three.js scene, camera, renderer, lights, controls, etc.
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xe0e0e0);
 
@@ -36,34 +41,52 @@ class ModelLoader {
         this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
         renderContainer.appendChild(this.renderer.domElement);
 
+        // Add ambient light
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
+        // Add directional light
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
         directionalLight.position.set(5, 5, 5);
         this.scene.add(directionalLight);
 
+        // Add OrbitControls
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.25;
 
+        // First-person controls variables
         this.isFirstPerson = false;
         this.firstPersonVelocity = new THREE.Vector3();
         this.firstPersonDirection = new THREE.Vector3();
 
+        // Device orientation controls variables
         this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
         this.isMobileLookEnabled = false;
 
+        // Virtual joystick
         this.joystick = null;
+
+        // File selection variables
         this.selectedFiles = { obj: null, mtl: null };
         this.currentModel = null;
 
+        // Add axes helper
         this.addAxesToCenter();
+
+        // Setup interactions
         this.setupInteractions(renderContainer);
+
+        // Setup file inputs
         this.setupFileInputs();
+
+        // Setup device orientation controls
         this.setupDeviceOrientationControls();
+
+        // Setup virtual joystick
         this.setupVirtualJoystick(renderContainer);
 
+        // Start animation loop
         this.animate();
     }
 
@@ -134,91 +157,93 @@ class ModelLoader {
         });
 
         window.addEventListener("keyup", () => {
+            if (!this.isFirstPerson) return;
             this.firstPersonVelocity.set(0, 0, 0);
         });
     }
 
-   setupFileInputs() {
-    const objInput = document.getElementById("objInput");
-    const mtlInput = document.getElementById("mtlInput");
-    const loadModelBtn = document.getElementById("load-model-btn");
-    const objSelectBtn = document.getElementById("obj-select-btn");
-    const mtlSelectBtn = document.getElementById("mtl-select-btn");
+    setupFileInputs() {
+        const objInput = document.getElementById("objInput");
+        const mtlInput = document.getElementById("mtlInput");
+        const loadModelBtn = document.getElementById("load-model-btn");
+        const objSelectBtn = document.getElementById("obj-select-btn");
+        const mtlSelectBtn = document.getElementById("mtl-select-btn");
 
-    // Trigger hidden file input when select button is clicked
-    objSelectBtn.addEventListener("click", () => {
-        objInput.click();
-    });
+        // Trigger hidden file input when select button is clicked
+        objSelectBtn.addEventListener("click", () => {
+            objInput.click();
+        });
 
-    mtlSelectBtn.addEventListener("click", () => {
-        mtlInput.click();
-    });
+        mtlSelectBtn.addEventListener("click", () => {
+            mtlInput.click();
+        });
 
-    objInput.addEventListener("change", (event) => {
-        const file = event.target.files[0];
-        if (file && file.name.toLowerCase().endsWith(".obj")) {
-            this.selectedFiles.obj = file;
-            console.log(`OBJ file selected: ${file.name}`);
-            objSelectBtn.classList.add("active");
-        } else {
-            alert("Please select a valid .obj file");
-            objSelectBtn.classList.remove("active");
-            this.selectedFiles.obj = null;
-        }
-        this.checkFilesSelected(loadModelBtn);
-    });
+        objInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".obj")) {
+                this.selectedFiles.obj = file;
+                console.log(`OBJ file selected: ${file.name}`);
+                objSelectBtn.classList.add("active");
+            } else {
+                alert("Please select a valid .obj file");
+                objSelectBtn.classList.remove("active");
+                this.selectedFiles.obj = null;
+            }
+            this.checkFilesSelected(loadModelBtn);
+        });
 
-    mtlInput.addEventListener("change", (event) => {
-        const file = event.target.files[0];
-        if (file && file.name.toLowerCase().endsWith(".mtl")) {
-            this.selectedFiles.mtl = file;
-            console.log(`MTL file selected: ${file.name}`);
-            mtlSelectBtn.classList.add("active");
-        } else {
-            alert("Please select a valid .mtl file");
-            mtlSelectBtn.classList.remove("active");
-            this.selectedFiles.mtl = null;
-        }
-        this.checkFilesSelected(loadModelBtn);
-    });
+        mtlInput.addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file && file.name.toLowerCase().endsWith(".mtl")) {
+                this.selectedFiles.mtl = file;
+                console.log(`MTL file selected: ${file.name}`);
+                mtlSelectBtn.classList.add("active");
+            } else {
+                alert("Please select a valid .mtl file");
+                mtlSelectBtn.classList.remove("active");
+                this.selectedFiles.mtl = null;
+            }
+            this.checkFilesSelected(loadModelBtn);
+        });
 
-    loadModelBtn.addEventListener("click", () => {
-        if (this.selectedFiles.obj && this.selectedFiles.mtl) {
-            this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
-            loadModelBtn.disabled = true; // Optionally disable after loading
-            objSelectBtn.classList.remove("active");
-            mtlSelectBtn.classList.remove("active");
-            this.selectedFiles = { obj: null, mtl: null };
-        } else {
-            alert("Please select both OBJ and MTL files.");
-        }
-    });
-}
-
-// Helper method to check if both files are selected
-checkFilesSelected(loadModelBtn) {
-    if (this.selectedFiles.obj && this.selectedFiles.mtl) {
-        loadModelBtn.disabled = false;
-    } else {
-        loadModelBtn.disabled = true;
+        loadModelBtn.addEventListener("click", () => {
+            if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+                this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
+                loadModelBtn.disabled = true; // Optionally disable after loading
+                objSelectBtn.classList.remove("active");
+                mtlSelectBtn.classList.remove("active");
+                this.selectedFiles = { obj: null, mtl: null };
+            } else {
+                alert("Please select both OBJ and MTL files.");
+            }
+        });
     }
-}
 
+    checkFilesSelected(loadModelBtn) {
+        if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+            loadModelBtn.disabled = false;
+        } else {
+            loadModelBtn.disabled = true;
+        }
+    }
 
     loadModel(objFile, mtlFile) {
         if (this.currentModel) {
             this.scene.remove(this.currentModel);
+            this.currentModel = null;
         }
 
         const mtlLoader = new THREE.MTLLoader();
         const objLoader = new THREE.OBJLoader();
 
+        // Load MTL file first
         mtlLoader.load(
             URL.createObjectURL(mtlFile),
             (materials) => {
                 materials.preload();
                 objLoader.setMaterials(materials);
 
+                // Then load OBJ file
                 objLoader.load(
                     URL.createObjectURL(objFile),
                     (object) => {
@@ -236,16 +261,23 @@ checkFilesSelected(loadModelBtn) {
                         this.scene.add(object);
 
                         console.log("Model loaded successfully.");
+                        document.getElementById("error-message").innerText = "";
                     },
-                    undefined,
+                    (xhr) => {
+                        console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+                    },
                     (error) => {
                         console.error("Error loading OBJ file:", error);
+                        document.getElementById("error-message").innerText = "Error loading OBJ file.";
                     }
                 );
             },
-            undefined,
+            (xhr) => {
+                console.log((xhr.loaded / xhr.total) * 100 + "% loaded MTL");
+            },
             (error) => {
                 console.error("Error loading MTL file:", error);
+                document.getElementById("error-message").innerText = "Error loading MTL file.";
             }
         );
     }
@@ -261,6 +293,7 @@ checkFilesSelected(loadModelBtn) {
 
                     const { alpha, beta, gamma } = this.deviceOrientation;
 
+                    // Convert degrees to radians and adjust camera rotation
                     this.camera.rotation.x = THREE.MathUtils.degToRad(beta - 90);
                     this.camera.rotation.y = THREE.MathUtils.degToRad(alpha);
                 }
@@ -289,6 +322,7 @@ checkFilesSelected(loadModelBtn) {
         });
 
         this.joystick.on("end", () => {
+            if (!this.isFirstPerson) return;
             this.firstPersonVelocity.set(0, 0, 0);
         });
     }

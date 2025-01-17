@@ -263,56 +263,43 @@ loadModel(objFile, mtlFile) {
                 objLoader.setMaterials(materials);
 
                 // Then load OBJ
-                objLoader.load(
-                    URL.createObjectURL(objFile),
-                    (object) => {
-                        this.currentModel = object;
+          objLoader.load(
+    URL.createObjectURL(objFile),
+    (object) => {
+        console.log("OBJ loaded successfully");
 
-                        // Traverse through all children to name parts and setup interaction
-                        object.traverse((child) => {
-                            if (child.isMesh) {
-                                // Optional: Add unique names to meshes if they don't have one
-                                if (!child.name) {
-                                    child.name = `Mesh_${Math.random().toString(36).substr(2, 9)}`;
-                                }
-                            }
-                        });
+        // Debug loaded object
+        console.log("Loaded object:", object);
+        object.traverse((child) => {
+            if (child.isMesh) {
+                console.log("Mesh found:", child.name, child.geometry);
+            }
+        });
 
-                        // Center the model
-                        const box = new THREE.Box3().setFromObject(object);
-                        const center = box.getCenter(new THREE.Vector3());
-                        const size = box.getSize(new THREE.Vector3());
+        // Debug bounding box
+        const box = new THREE.Box3().setFromObject(object);
+        console.log("Bounding box:", box);
 
-                        // Store scene boundaries (if needed elsewhere)
-                        this.sceneBoundaries = {
-                            min: box.min.clone(),
-                            max: box.max.clone(),
-                        };
+        // Center and scale the model
+        const center = box.getCenter(new THREE.Vector3());
+        const size = box.getSize(new THREE.Vector3());
+        object.position.sub(center); // Center the object
+        const scaleFactor = 5 / Math.max(size.x, size.y, size.z);
+        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-                        // Scale model to fit the scene
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                        const scaleFactor = 5 / maxDim; // Adjust scaling as needed
-                        object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        // Add to scene
+        this.scene.add(object);
+        console.log("Model added to scene");
 
-                        // Center the model in the scene
-                        object.position.sub(center);
+        // Start rendering loop
+        this.startRenderingLoop();
+    },
+    (xhr) => console.log((xhr.loaded / xhr.total) * 100 + "% loaded"),
+    (error) => {
+        console.error("Error loading OBJ:", error);
+    }
+);
 
-                        // Add the model to the scene
-                        this.scene.add(object);
-
-                        // Adjust the camera to fit the model
-                        if (typeof this.fitCameraToObject === "function") {
-                            this.fitCameraToObject(object, size);
-                        }
-                    },
-                    // onProgress
-                    (xhr) => console.log(`${(xhr.loaded / xhr.total) * 100}% loaded`),
-                    // onError
-                    (error) => {
-                        console.error("Error loading OBJ:", error);
-                        document.getElementById("error-message").textContent = "Error loading OBJ file.";
-                    }
-                );
             },
             // onProgress
             (xhr) => console.log(`${(xhr.loaded / xhr.total) * 100}% loaded MTL`),

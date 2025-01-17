@@ -1,133 +1,128 @@
 // app.js
 
-// Ensure that THREE, MTLLoader, OBJLoader, OrbitControls, and nipplejs are loaded via script tags in your HTML.
-// Example (CDN-based for r140):
-// <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r140/three.min.js"></script>
-// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/OBJLoader.js"></script>
-// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/loaders/MTLLoader.js"></script>
-// <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/controls/OrbitControls.js"></script>
-// <script src="https://cdn.jsdelivr.net/npm/nipplejs@0.8.0/dist/nipplejs.min.js"></script>
-// Then <script src="app.js"></script>
+// Make sure you have these scripts in your HTML, in this order:
+// 1) three.min.js
+// 2) OBJLoader.js
+// 3) MTLLoader.js
+// 4) OrbitControls.js
+// 5) nipplejs.min.js (if needed for virtual joystick)
+// Then include this script at the end of the body.
 
 let modelLoader; // Declare globally
 
 document.addEventListener("DOMContentLoaded", () => {
     const renderContainer = document.getElementById("render-container");
-
-    // Initialize the model loader and assign it to the global variable
     modelLoader = new ModelLoader(renderContainer);
 
-    // Resize handler: Ensure proper resizing of the scene
+    // Handle window resizing
     window.addEventListener("resize", () => {
+        if (!modelLoader) return;
         const width = renderContainer.clientWidth;
         const height = renderContainer.clientHeight;
 
-        if (modelLoader) {
-            modelLoader.camera.aspect = width / height;
-            modelLoader.camera.updateProjectionMatrix();
-            modelLoader.renderer.setSize(width, height);
-        }
+        modelLoader.camera.aspect = width / height;
+        modelLoader.camera.updateProjectionMatrix();
+        modelLoader.renderer.setSize(width, height);
     });
 });
 
 class ModelLoader {
     constructor(renderContainer) {
-        // Create Scene
+        // ------------------------------------
+        // Basic Three.js Setup
+        // ------------------------------------
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0xe0e0e0);
 
-        // Camera
         this.camera = new THREE.PerspectiveCamera(
             75,
             renderContainer.clientWidth / renderContainer.clientHeight,
             0.1,
             1000
         );
-        this.camera.position.set(0, 1.6, 5); // Simulate head height
+        // Place the camera somewhat above and back
+        this.camera.position.set(0, 3, 10);
 
-        // Renderer
         this.renderer = new THREE.WebGLRenderer({ antialias: true });
         this.renderer.setSize(renderContainer.clientWidth, renderContainer.clientHeight);
-        this.renderer.setPixelRatio(window.devicePixelRatio); // For higher DPI screens
+        this.renderer.setPixelRatio(window.devicePixelRatio);
         renderContainer.appendChild(this.renderer.domElement);
 
+        // ------------------------------------
         // Lights
+        // ------------------------------------
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
         this.scene.add(ambientLight);
 
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 5, 5);
+        directionalLight.position.set(10, 10, 10);
         this.scene.add(directionalLight);
 
+        // ------------------------------------
         // OrbitControls
+        // ------------------------------------
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.25;
 
+        // ------------------------------------
         // First-person controls variables
+        // ------------------------------------
         this.isFirstPerson = false;
         this.firstPersonVelocity = new THREE.Vector3();
         this.firstPersonDirection = new THREE.Vector3();
 
-        // Device orientation controls variables
+        // Device orientation (mobile look)
         this.deviceOrientation = { alpha: 0, beta: 0, gamma: 0 };
 
         // Virtual joystick
         this.joystick = null;
 
-        // File selection variables
+        // File selection
         this.selectedFiles = { obj: null, mtl: null };
         this.currentModel = null;
 
-        // Add reference helpers/objects
+        // Add a simple axes helper at the origin
         this.addAxesToCenter();
- 
-        // Setup various interactions
+
+        // Setup UI / interactions
         this.setupInteractions();
         this.setupFileInputs();
         this.setupDeviceOrientationControls();
         this.setupVirtualJoystick();
-
-        // Begin rendering/animation
-        this.animate();
     }
 
-    // -------------------------------------------------------
-    //  Add helpers / test geometry
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // Helpers
+    // ----------------------------------------------------
     addAxesToCenter() {
         const length = 5;
 
-        // X-axis (Red)
-        const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        const xAxisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(length, 0, 0),
+            new THREE.Vector3(length, 0, 0)
         ]);
-        const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        this.scene.add(new THREE.Line(xAxisGeometry, xAxisMaterial));
+        const xAxisMat = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        this.scene.add(new THREE.Line(xAxisGeo, xAxisMat));
 
-        // Y-axis (Green)
-        const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        const yAxisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, length, 0),
+            new THREE.Vector3(0, length, 0)
         ]);
-        const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-        this.scene.add(new THREE.Line(yAxisGeometry, yAxisMaterial));
+        const yAxisMat = new THREE.LineBasicMaterial({ color: 0x00ff00 });
+        this.scene.add(new THREE.Line(yAxisGeo, yAxisMat));
 
-        // Z-axis (Blue)
-        const zAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        const zAxisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, 0),
-            new THREE.Vector3(0, 0, length),
+            new THREE.Vector3(0, 0, length)
         ]);
-        const zAxisMaterial = new THREE.LineBasicMaterial({ color: 0x0000ff });
-        this.scene.add(new THREE.Line(zAxisGeometry, zAxisMaterial));
+        const zAxisMat = new THREE.LineBasicMaterial({ color: 0x0000ff });
+        this.scene.add(new THREE.Line(zAxisGeo, zAxisMat));
     }
 
-
-
-    // -------------------------------------------------------
-    //  Interactions
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // Interactions (Orbit vs. First Person)
+    // ----------------------------------------------------
     setupInteractions() {
         const firstPersonBtn = document.getElementById("first-person-btn");
         if (firstPersonBtn) {
@@ -174,9 +169,9 @@ class ModelLoader {
         });
     }
 
-    // -------------------------------------------------------
-    //  File inputs (OBJ / MTL)
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // File Inputs (OBJ / MTL)
+    // ----------------------------------------------------
     setupFileInputs() {
         const objInput = document.getElementById("objInput");
         const mtlInput = document.getElementById("mtlInput");
@@ -184,12 +179,9 @@ class ModelLoader {
         const objSelectBtn = document.getElementById("obj-select-btn");
         const mtlSelectBtn = document.getElementById("mtl-select-btn");
 
-        if (!objInput || !mtlInput || !loadModelBtn || !objSelectBtn || !mtlSelectBtn) {
-            console.warn("File input elements not found in HTML. Skipping file input setup.");
-            return;
-        }
+        // If the HTML elements don't exist, do nothing
+        if (!objInput || !mtlInput || !loadModelBtn || !objSelectBtn || !mtlSelectBtn) return;
 
-        // Trigger hidden file input when select button is clicked
         objSelectBtn.addEventListener("click", () => {
             objInput.click();
         });
@@ -228,8 +220,9 @@ class ModelLoader {
 
         loadModelBtn.addEventListener("click", () => {
             if (this.selectedFiles.obj && this.selectedFiles.mtl) {
+                // Load model, then start rendering
                 this.loadModel(this.selectedFiles.obj, this.selectedFiles.mtl);
-                loadModelBtn.disabled = true; // Optionally disable after loading
+                loadModelBtn.disabled = true;
                 objSelectBtn.classList.remove("active");
                 mtlSelectBtn.classList.remove("active");
                 this.selectedFiles = { obj: null, mtl: null };
@@ -240,6 +233,7 @@ class ModelLoader {
     }
 
     checkFilesSelected(loadModelBtn) {
+        if (!loadModelBtn) return;
         if (this.selectedFiles.obj && this.selectedFiles.mtl) {
             loadModelBtn.disabled = false;
         } else {
@@ -247,9 +241,9 @@ class ModelLoader {
         }
     }
 
-    // -------------------------------------------------------
-    //  Load OBJ/MTL model
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // Load Model (No Scaling or Centering)
+    // ----------------------------------------------------
     loadModel(objFile, mtlFile) {
         if (this.currentModel) {
             this.scene.remove(this.currentModel);
@@ -276,44 +270,26 @@ class ModelLoader {
                         console.log("OBJ file loaded successfully.");
                         this.currentModel = object;
 
-                        // Compute bounding box for centering and scaling
-                        const box = new THREE.Box3().setFromObject(object);
-                        const center = box.getCenter(new THREE.Vector3());
-                        const size = box.getSize(new THREE.Vector3());
+                        // No scaling or repositioning
+                        // The model stays at whatever coordinates it was exported with
+                        console.log("Model added at original OBJ coordinates.");
 
-                        console.log("Model bounding box:", box);
+                        this.scene.add(object);
 
-                        // Scale so that the largest dimension is ~5 units
-                        const maxDim = Math.max(size.x, size.y, size.z);
-                const sceneWidth = 10; // Adjust this based on your scene dimensions
-const scaleFactor = sceneWidth / maxDim; 
+                        // If we haven't started rendering yet, start now:
+                        this.startRenderingLoop();
 
-object.scale.set(scaleFactor, scaleFactor, scaleFactor); 
-
-                        // Center the object at (0,0,0)
-                        object.position.sub(center);
-this.scene.add(object);
-
-// Make sure OrbitControls looks at the origin
-this.controls.target.set(0, 0, 0);
-// Move camera back more, so you definitely see the model
-this.camera.position.set(0, 5, 15);
-
-                        console.log("Model added to the scene.");
-                        const errorMessageEl = document.getElementById("error-message");
-                        if (errorMessageEl) {
-                            errorMessageEl.innerText = "";
-                        }
+                        // Clear any error message
+                        const errorEl = document.getElementById("error-message");
+                        if (errorEl) errorEl.innerText = "";
                     },
                     (xhr) => {
                         console.log((xhr.loaded / xhr.total) * 100 + "% loaded OBJ");
                     },
                     (error) => {
                         console.error("Error loading OBJ file:", error);
-                        const errorMessageEl = document.getElementById("error-message");
-                        if (errorMessageEl) {
-                            errorMessageEl.innerText = "Error loading OBJ file.";
-                        }
+                        const errorEl = document.getElementById("error-message");
+                        if (errorEl) errorEl.innerText = "Error loading OBJ file.";
                     }
                 );
             },
@@ -322,60 +298,48 @@ this.camera.position.set(0, 5, 15);
             },
             (error) => {
                 console.error("Error loading MTL file:", error);
-                const errorMessageEl = document.getElementById("error-message");
-                if (errorMessageEl) {
-                    errorMessageEl.innerText = "Error loading MTL file.";
-                }
+                const errorEl = document.getElementById("error-message");
+                if (errorEl) errorEl.innerText = "Error loading MTL file.";
             }
         );
     }
 
-    // -------------------------------------------------------
-    //  Mobile device orientation
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // Device Orientation (mobile look)
+    // ----------------------------------------------------
     setupDeviceOrientationControls() {
-        window.addEventListener(
-            "deviceorientation",
-            (event) => {
-                if (this.isFirstPerson) {
-                    this.deviceOrientation.alpha = event.alpha;
-                    this.deviceOrientation.beta = event.beta;
-                    this.deviceOrientation.gamma = event.gamma;
+        window.addEventListener("deviceorientation", (event) => {
+            if (!this.isFirstPerson) return;
 
-                    const { alpha, beta, gamma } = this.deviceOrientation;
+            this.deviceOrientation.alpha = event.alpha;
+            this.deviceOrientation.beta = event.beta;
+            this.deviceOrientation.gamma = event.gamma;
 
-                    // Convert degrees to radians and adjust camera rotation
-                    this.camera.rotation.x = THREE.MathUtils.degToRad(beta - 90);
-                    this.camera.rotation.y = THREE.MathUtils.degToRad(alpha);
-                }
-            },
-            true
-        );
+            const { alpha, beta } = this.deviceOrientation;
+            // Convert degrees to radians, adjusting camera rotation
+            this.camera.rotation.x = THREE.MathUtils.degToRad(beta - 90);
+            this.camera.rotation.y = THREE.MathUtils.degToRad(alpha);
+        }, true);
     }
 
-    // -------------------------------------------------------
-    //  Virtual Joystick
-    // -------------------------------------------------------
+    // ----------------------------------------------------
+    // Virtual Joystick
+    // ----------------------------------------------------
     setupVirtualJoystick() {
         const joystickContainer = document.getElementById("virtual-joystick");
-        if (!joystickContainer) {
-            console.warn("No #virtual-joystick container found in HTML. Skipping joystick setup.");
-            return;
-        }
+        if (!joystickContainer) return;
 
         this.joystick = nipplejs.create({
             zone: joystickContainer,
             mode: "static",
             position: { left: "50%", top: "50%" },
-            color: "rgba(100,100,100,0.5)",
+            color: "rgba(100,100,100,0.5)"
         });
 
         this.joystick.on("move", (evt, data) => {
             if (!this.isFirstPerson) return;
-
             const force = data.force * 0.1;
             const angle = data.angle.radian;
-
             this.firstPersonVelocity.x = Math.sin(angle) * force;
             this.firstPersonVelocity.z = -Math.cos(angle) * force;
         });
@@ -386,24 +350,31 @@ this.camera.position.set(0, 5, 15);
         });
     }
 
-    // -------------------------------------------------------
-    //  Animation loop
-    // -------------------------------------------------------
-    animate() {
-        requestAnimationFrame(() => this.animate());
+    // ----------------------------------------------------
+    // Start Rendering (Called After OBJ Loads)
+    // ----------------------------------------------------
+    startRenderingLoop() {
+        // If we already started, don’t start again
+        if (this.isRendering) return;
+        this.isRendering = true;
 
-        // If in first-person mode, apply velocity
-        if (this.isFirstPerson) {
-            // Move camera in the direction based on rotation.y
-            const moveVector = this.firstPersonVelocity.clone().applyMatrix4(
-                new THREE.Matrix4().makeRotationY(this.camera.rotation.y)
-            );
-            this.camera.position.add(moveVector);
-        } else {
-            // Update OrbitControls (damping, etc.)
-            this.controls.update();
-        }
+        const animate = () => {
+            requestAnimationFrame(animate);
 
-        this.renderer.render(this.scene, this.camera);
+            if (this.isFirstPerson) {
+                // Move camera in first-person style
+                const moveVector = this.firstPersonVelocity.clone().applyMatrix4(
+                    new THREE.Matrix4().makeRotationY(this.camera.rotation.y)
+                );
+                this.camera.position.add(moveVector);
+            } else {
+                // Orbit controls
+                this.controls.update();
+            }
+
+            this.renderer.render(this.scene, this.camera);
+        };
+
+        animate();
     }
 }

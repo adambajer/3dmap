@@ -81,8 +81,7 @@ class ModelLoader {
 
         // Add reference helpers/objects
         this.addAxesToCenter();
-        this.addDefaultCube();
-
+ 
         // Setup various interactions
         this.setupInteractions();
         this.setupFileInputs();
@@ -124,13 +123,7 @@ class ModelLoader {
         this.scene.add(new THREE.Line(zAxisGeometry, zAxisMaterial));
     }
 
-    addDefaultCube() {
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-        const cube = new THREE.Mesh(geometry, material);
-        cube.position.set(0, 0.5, 0); // Raise it slightly above origin
-        this.scene.add(cube);
-    }
+
 
     // -------------------------------------------------------
     //  Interactions

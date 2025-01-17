@@ -241,50 +241,44 @@ class ModelLoader {
         }
     }
 loadModel(objFile, mtlFile) {
-    if (this.currentModel) {
-        this.scene.remove(this.currentModel);
-        this.currentModel = null;
-    }
-
     const mtlLoader = new THREE.MTLLoader();
     const objLoader = new THREE.OBJLoader();
 
     mtlLoader.load(
         URL.createObjectURL(mtlFile),
         (materials) => {
+            console.log("MTL loaded successfully");
             materials.preload();
             objLoader.setMaterials(materials);
 
             objLoader.load(
                 URL.createObjectURL(objFile),
                 (object) => {
-                    // Compute the bounding box
+                    console.log("OBJ loaded successfully");
+
+                    // Debugging: Log object position and scale
+                    console.log("Before centering:", object.position, object.scale);
+
+                    // Center and scale object
                     const box = new THREE.Box3().setFromObject(object);
-                    const size = new THREE.Vector3();
-                    const center = new THREE.Vector3();
-                    box.getSize(size);
-                    box.getCenter(center);
+                    const center = box.getCenter(new THREE.Vector3());
+                    object.position.sub(center); // Center the object
+                    console.log("After centering:", object.position);
 
-                    // Center the model at the origin
-                    object.position.sub(center);
-
-                    // Optionally, scale the model to fit in a specific size
-                    const maxSize = Math.max(size.x, size.y, size.z);
-                    const scaleFactor = 5 / maxSize; // Adjust '5' as needed
+                    const size = box.getSize(new THREE.Vector3()).length();
+                    const scaleFactor = 5 / size;
                     object.scale.setScalar(scaleFactor);
+                    console.log("After scaling:", object.scale);
 
-                    this.currentModel = object;
                     this.scene.add(object);
-
-                    // Start rendering if not already started
-                    this.startRenderingLoop();
+                    console.log("Model added to scene");
                 },
-                undefined,
-                (error) => console.error("Error loading OBJ file:", error)
+                (xhr) => console.log((xhr.loaded / xhr.total) * 100 + "% loaded"),
+                (error) => console.error("Error loading OBJ:", error)
             );
         },
         undefined,
-        (error) => console.error("Error loading MTL file:", error)
+        (error) => console.error("Error loading MTL:", error)
     );
 }
 

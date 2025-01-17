@@ -158,11 +158,13 @@ class ModelLoader {
         this.renderer.render(this.scene, this.camera);
     }
 }
-
 document.addEventListener("DOMContentLoaded", () => {
     const renderContainer = document.getElementById("render-container");
-    new ModelLoader(renderContainer);
 
+    // Declare `modelLoader` as a global variable
+    const modelLoader = new ModelLoader(renderContainer);
+
+    // Resize handler: Ensure the `modelLoader` instance is used properly
     window.addEventListener("resize", () => {
         const width = renderContainer.clientWidth;
         const height = renderContainer.clientHeight;
@@ -172,3 +174,4 @@ document.addEventListener("DOMContentLoaded", () => {
         modelLoader.renderer.setSize(width, height);
     });
 });
+

@@ -240,69 +240,54 @@ class ModelLoader {
             loadModelBtn.disabled = true;
         }
     }
-
-    // ----------------------------------------------------
-    // Load Model (No Scaling or Centering)
-    // ----------------------------------------------------
-    loadModel(objFile, mtlFile) {
-        if (this.currentModel) {
-            this.scene.remove(this.currentModel);
-            this.currentModel = null;
-        }
-
-        const mtlLoader = new THREE.MTLLoader();
-        const objLoader = new THREE.OBJLoader();
-
-        console.log("Starting to load MTL file...");
-
-        mtlLoader.load(
-            URL.createObjectURL(mtlFile),
-            (materials) => {
-                console.log("MTL file loaded successfully.");
-                materials.preload();
-                objLoader.setMaterials(materials);
-
-                console.log("Starting to load OBJ file...");
-
-                objLoader.load(
-                    URL.createObjectURL(objFile),
-                    (object) => {
-                        console.log("OBJ file loaded successfully.");
-                        this.currentModel = object;
-
-                        // No scaling or repositioning
-                        // The model stays at whatever coordinates it was exported with
-                        console.log("Model added at original OBJ coordinates.");
-
-                        this.scene.add(object);
-
-                        // If we haven't started rendering yet, start now:
-                        this.startRenderingLoop();
-
-                        // Clear any error message
-                        const errorEl = document.getElementById("error-message");
-                        if (errorEl) errorEl.innerText = "";
-                    },
-                    (xhr) => {
-                        console.log((xhr.loaded / xhr.total) * 100 + "% loaded OBJ");
-                    },
-                    (error) => {
-                        console.error("Error loading OBJ file:", error);
-                        const errorEl = document.getElementById("error-message");
-                        if (errorEl) errorEl.innerText = "Error loading OBJ file.";
-                    }
-                );
-            },
-            (xhr) => {
-                console.log((xhr.loaded / xhr.total) * 100 + "% loaded MTL");
-            },
-            (error) => {
-                console.error("Error loading MTL file:", error);
-                const errorEl = document.getElementById("error-message");
-                if (errorEl) errorEl.innerText = "Error loading MTL file.";
-            }
-        );
+loadModel(objFile, mtlFile) {
+    if (this.currentModel) {
+        this.scene.remove(this.currentModel);
+        this.currentModel = null;
     }
+
+    const mtlLoader = new THREE.MTLLoader();
+    const objLoader = new THREE.OBJLoader();
+
+    mtlLoader.load(
+        URL.createObjectURL(mtlFile),
+        (materials) => {
+            materials.preload();
+            objLoader.setMaterials(materials);
+
+            objLoader.load(
+                URL.createObjectURL(objFile),
+                (object) => {
+                    // Compute the bounding box
+                    const box = new THREE.Box3().setFromObject(object);
+                    const size = new THREE.Vector3();
+                    const center = new THREE.Vector3();
+                    box.getSize(size);
+                    box.getCenter(center);
+
+                    // Center the model at the origin
+                    object.position.sub(center);
+
+                    // Optionally, scale the model to fit in a specific size
+                    const maxSize = Math.max(size.x, size.y, size.z);
+                    const scaleFactor = 5 / maxSize; // Adjust '5' as needed
+                    object.scale.setScalar(scaleFactor);
+
+                    this.currentModel = object;
+                    this.scene.add(object);
+
+                    // Start rendering if not already started
+                    this.startRenderingLoop();
+                },
+                undefined,
+                (error) => console.error("Error loading OBJ file:", error)
+            );
+        },
+        undefined,
+        (error) => console.error("Error loading MTL file:", error)
+    );
+}
+
 
     // ----------------------------------------------------
     // Device Orientation (mobile look)

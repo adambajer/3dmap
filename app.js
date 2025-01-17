@@ -287,11 +287,16 @@ class ModelLoader {
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scaleFactor = 5 / maxDim;
                         object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+console.log("maxDim:", maxDim, " -> scaleFactor:", scaleFactor);
 
                         // Center the object at (0,0,0)
                         object.position.sub(center);
+this.scene.add(object);
 
-                        this.scene.add(object);
+// Make sure OrbitControls looks at the origin
+this.controls.target.set(0, 0, 0);
+// Move camera back more, so you definitely see the model
+this.camera.position.set(0, 5, 15);
 
                         console.log("Model added to the scene.");
                         const errorMessageEl = document.getElementById("error-message");
